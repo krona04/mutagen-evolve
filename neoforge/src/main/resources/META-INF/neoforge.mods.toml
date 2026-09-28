@@ -1,6 +1,6 @@
 modLoader = "javafml"
 loaderVersion = "[2,)"
-#issueTrackerURL = ""
+issueTrackerURL = "https://github.com/krona04/mutagen-evolve/issues"
 license = "MIT"
 
 [[mods]]
@@ -9,9 +9,9 @@ version = "${version}"
 displayName = "Mutagen"
 authors = "Krona04"
 description = '''
-
+Hunt a mob, take a tissue sample with a syringe, read its genome in the lab, and synthesize a serum — then keep dosing yourself for in-game days while your body slowly turns into that creature, bone by bone. There is no morph button: every power you gain arrives with the weakness that comes with it, and by the full form you may have no hands left to craft with.
 '''
-#logoFile = ""
+logoFile = "title.png"
 
 [[dependencies.mutagen]]
 modId = "neoforge"

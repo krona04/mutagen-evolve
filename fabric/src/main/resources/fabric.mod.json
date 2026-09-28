@@ -3,15 +3,17 @@
   "id": "mutagen",
   "version": "${version}",
   "name": "Mutagen",
-  "description": "",
+  "description": "Hunt a mob, take a tissue sample with a syringe, read its genome in the lab, and synthesize a serum — then keep dosing yourself for in-game days while your body slowly turns into that creature, bone by bone. There is no morph button: every power you gain arrives with the weakness that comes with it, and by the full form you may have no hands left to craft with.",
   "authors": [
     "Krona04"
   ],
   "contact": {
-    "homepage": ""
+    "homepage": "https://modrinth.com/user/Krona_04",
+    "sources": "https://github.com/krona04/mutagen-evolve",
+    "issues": "https://github.com/krona04/mutagen-evolve/issues"
   },
   "license": "MIT",
-  "icon": "assets/mutagen/icon.png",
+  "icon": "icon.png",
   "environment": "*",
   "entrypoints": {
     "main": [

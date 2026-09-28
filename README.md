@@ -2,6 +2,8 @@
 
 **Become the mob. Pay what it costs.**
 
+<center><img src="https://i.imgur.com/QNd2ZcX.png" alt="Mutagen Banner" width="500px"></center>
+
 > ⚠️ **EARLY ACCESS**
 >
 > This is **0.1 «First Dose»**, the first public release. The core loop is complete and playable, strains live in
@@ -178,46 +180,30 @@ trait type are described in [docs/DESIGN.md](docs/DESIGN.md).
 
 ---
 
-## 🗺️ Where this is going
+## 🌍 Localization
 
-The full plan — every version up to 1.0 and the 2.0 branch after it — is in **[ROADMAP.md](ROADMAP.md)**.
-The systems behind it, including the ones not built yet, are in **[docs/DESIGN.md](docs/DESIGN.md)**.
+| Language  |Code  |
+| --------- |----- |
+| English   |<code>en_us</code> |
+| Russian   |<code>ru_ru</code> |
+| Ukrainian |<code>uk_ua</code> |
+| Polish    |<code>pl_pl</code> |
+| German    |<code>de_de</code> |
+| French    |<code>fr_fr</code> |
+| Spanish   |<code>es_es</code> |
 
-| Version | Name | What it brings |
-|---|---|---|
-| **0.2** | Abilities | Active abilities on a key, the apex ability, twelve curated strains |
-| **0.3** | Stability | Overdose, mutation flares, breakdown, and a med pod that resets a strain safely |
-| **0.4** | Chimeras | Two and then three genes, the compatibility matrix, suppressors |
-| **0.5** | Any Mob | A strain derived procedurally from any entity, including modded ones |
-| **0.6** | The World | The abandoned KRONA lab, cryo storage, the incubator. Saves stop breaking here |
-| **0.7** | Society | Villagers, golems and pets react to what you are. Multiplayer |
-| **0.8** | Open | `MutagenAPI` v1, JEI/EMI, Jade, datapack documentation |
-| **0.9** | Polish | Balance, performance, sound, migration from every earlier version |
+---
 
-## 🧩 Compatibility
+## ⚖️ License
 
-| Mod | What happens |
-|---|---|
-| **Pehkui** | Body size, eyes, reach and inertia go through it. Optional; turn off with `pehkuiIntegration` |
-| **Sodium / Embeddium** | Works as is: every mutation layer is drawn through vanilla model parts |
-| **Iris / Oculus** | Mutation overlays skip the shadow pass of shader packs |
-| **Skin and cape mods** | Your skin is whatever they provide. The cape leaves with you in full form |
-| **Figura** | An avatar may cover the hybrid and the full form. Turn off `hybridRender` / `fullFormRender` if they fight |
+Licensed under the **MIT License**.
 
-The log lists which of these were found at startup.
+- **Modpacks:** Free to include in any modpack.
+- **Source Code:** Free to view, modify and distribute, provided the copyright notice and license text are kept.
 
-Nothing on that list will be a hard dependency. Recommended integrations like **Pehkui** are detected at
-runtime and the mod stays fully playable without them.
+---
 
-## 🧪 Testing
+## 🐛 Bug Reports & Suggestions
 
-The protocol is in [docs/TESTING.md](docs/TESTING.md), and it opens with a ten-minute check that tells
-you whether everything installed correctly. The most useful report is the one about **how it felt**:
-how long before you noticed something was wrong with your character without looking at the indicator,
-and which weakness felt unfair.
-
-Known limitations for this release are listed at the end of [CHANGELOG.md](CHANGELOG.md).
-
-## 📜 License
-
-MIT — see [LICENSE.txt](LICENSE.txt).
+Found a bug or have a feature idea?  
+Please open an issue on the **[GitHub Issues Page](https://github.com/krona04/mutagen-evolve/issues)**.
