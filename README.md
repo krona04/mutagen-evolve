@@ -120,31 +120,6 @@ arm at all, if it never had one. Turn it off with `fullFormRender` if it clashes
 | **Skeleton** | Arrows hit 1.5× harder, poison and hunger do nothing | −4 health, blasts hurt 1.5× more, burns in sunlight. No sleep from III; from IV cannot eat and never heals naturally |
 | **Creeper** | Immune to blasts, +12% speed | Panics near cats, −1 attack damage, 1.5× fire damage, sheds armour at stage V. Loses its hands: no off-hand from III; from IV only five belt slots, no tools, weapons or crafting; at V three slots and no building |
 
-### Your own strains
-
-A strain is a JSON file in a datapack: `data/<namespace>/mutagen/strains/<name>.json`. It names the
-creature, its colour, height, difficulty, synthesis cost and a list of traits. `/reload` applies changes
-on a running server, and operators see in chat which files were skipped and why. The format and every
-trait type are described in [docs/DESIGN.md](docs/DESIGN.md).
-
-```json
-{
-  "entity": "minecraft:witch",
-  "color": "#6A2C8C",
-  "difficulty": 2,
-  "synthesis": { "catalyst": "mutagen:catalyst", "catalyst_count": 1, "time": 400 },
-  "body": {
-    "model_layer": "minecraft:witch",
-    "spread": ["head", "body"],
-    "height": 1.95, "eye_height": 1.62
-  },
-  "traits": [
-    { "type": "effect_immunity", "from_stage": "II", "effects": ["minecraft:poison"] },
-    { "type": "attribute", "from_stage": "mutation", "attribute": "minecraft:generic.max_health", "amount": -2 }
-  ]
-}
-```
-
 ---
 
 ## 🎛️ Control
