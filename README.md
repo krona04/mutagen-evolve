@@ -7,8 +7,7 @@
 > ⚠️ **EARLY ACCESS**
 >
 > This is **0.1 «First Dose»**, the first public release. The core loop is complete and playable, strains live in
-> datapacks, the lab needs research, and from stage III the creature grows on your body. Content is
-> still small and saves may break until `0.6`.
+> datapacks, the lab needs research, and from stage III the creature grows on your body.
 >
 > * **Loaders:** Fabric & NeoForge
 > * **Minecraft:** 1.21.1
