@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/cube_bottom_top",
+  "textures": {
+    "top": "mutagen:block/bio_workbench_top",
+    "side": "mutagen:block/bio_workbench_side",
+    "bottom": "mutagen:block/bio_workbench_side"
+  }
+}

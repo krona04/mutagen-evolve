@@ -1,0 +1,51 @@
+name: Feedback on how it feels
+description: The prototype works, but something reads wrong
+labels: ["feedback"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This is the report the prototype exists for. Mutagen is trying to prove that a slow
+        transformation reads as biology rather than as a switch — tell us where it failed to.
+
+  - type: dropdown
+    id: scenario
+    attributes:
+      label: Which scenario
+      options:
+        - "1 — the honest path to stage V"
+        - "2 — the price: weaknesses and lost abilities"
+        - "3 — decay, stabilizer and reversal"
+        - "Something else"
+    validations:
+      required: true
+
+  - type: textarea
+    id: readable
+    attributes:
+      label: Was it clear what was happening to you?
+      description: |
+        Without looking at the indicator — at what point did you notice something was wrong with
+        your character? Did any change look like a bug instead of a design decision?
+    validations:
+      required: true
+
+  - type: textarea
+    id: pacing
+    attributes:
+      label: Pacing
+      description: How long did stages I→III and III→V take? Too slow, too fast, or about right?
+    validations:
+      required: true
+
+  - type: textarea
+    id: price
+    attributes:
+      label: The price
+      description: Which weakness felt unfair, and which felt boring?
+
+  - type: textarea
+    id: quit
+    attributes:
+      label: Did you want to stop?
+      description: Was there a moment you wanted to roll the transformation back? Why?

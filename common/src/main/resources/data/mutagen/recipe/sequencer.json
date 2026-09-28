@@ -1,0 +1,27 @@
+{
+  "type": "mutagen:bio_workbench",
+  "ingredients": [
+    {
+      "ingredient": {
+        "item": "minecraft:iron_ingot"
+      },
+      "count": 4
+    },
+    {
+      "ingredient": {
+        "item": "minecraft:glass"
+      },
+      "count": 2
+    },
+    {
+      "item": "minecraft:comparator"
+    },
+    {
+      "item": "minecraft:spyglass"
+    }
+  ],
+  "result": {
+    "id": "mutagen:sequencer",
+    "count": 1
+  }
+}

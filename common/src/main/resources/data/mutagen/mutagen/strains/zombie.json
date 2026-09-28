@@ -1,0 +1,118 @@
+{
+  "entity": "minecraft:zombie",
+  "color": "#4B7A3A",
+  "difficulty": 1,
+  "synthesis": {
+    "catalyst": "mutagen:catalyst",
+    "catalyst_count": 1,
+    "time": 300
+  },
+  "body": {
+    "model_layer": "minecraft:zombie",
+    "spread": [
+      "right_arm",
+      "body",
+      "head",
+      "left_arm",
+      "right_leg",
+      "left_leg"
+    ],
+    "skin": "texture",
+    "parts": [
+      {
+        "part": "head"
+      },
+      {
+        "part": "body"
+      },
+      {
+        "part": "right_arm"
+      },
+      {
+        "part": "left_arm"
+      },
+      {
+        "part": "right_leg"
+      },
+      {
+        "part": "left_leg"
+      }
+    ],
+    "morph": [
+      {
+        "bone": "right_arm",
+        "rotation": [
+          -75,
+          0,
+          0
+        ]
+      },
+      {
+        "bone": "left_arm",
+        "rotation": [
+          -75,
+          0,
+          0
+        ]
+      }
+    ],
+    "reach": 0.5
+  },
+  "traits": [
+    {
+      "type": "mutagen:attribute",
+      "from_stage": "manifestation",
+      "attribute": "minecraft:generic.attack_damage",
+      "amount": 2.0,
+      "description": "mutagen.trait.zombie.strength"
+    },
+    {
+      "type": "mutagen:dark_regeneration",
+      "from_stage": "manifestation"
+    },
+    {
+      "type": "mutagen:attribute",
+      "from_stage": "mutation",
+      "attribute": "minecraft:generic.max_health",
+      "amount": 4.0,
+      "description": "mutagen.trait.zombie.flesh"
+    },
+    {
+      "type": "mutagen:effect_immunity",
+      "from_stage": "mutation",
+      "effects": [
+        "minecraft:hunger"
+      ],
+      "description": "mutagen.trait.zombie.no_hunger"
+    },
+    {
+      "type": "mutagen:attribute",
+      "from_stage": "mutation",
+      "attribute": "minecraft:generic.movement_speed",
+      "amount": -0.15,
+      "operation": "add_multiplied_total",
+      "description": "mutagen.trait.zombie.slow"
+    },
+    {
+      "type": "mutagen:sun_burn",
+      "from_stage": "domination"
+    },
+    {
+      "type": "mutagen:no_sleep",
+      "from_stage": "mutation"
+    },
+    {
+      "type": "mutagen:diet",
+      "from_stage": "domination",
+      "foods": "#minecraft:meat",
+      "description": "mutagen.trait.zombie.meat_diet"
+    },
+    {
+      "type": "mutagen:no_crafting",
+      "from_stage": "domination",
+      "stations": "#mutagen:fine_work",
+      "grid": false,
+      "description": "mutagen.trait.zombie.clumsy"
+    }
+  ]
+}

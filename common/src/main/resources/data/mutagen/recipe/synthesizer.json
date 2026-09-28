@@ -1,0 +1,27 @@
+{
+  "type": "mutagen:bio_workbench",
+  "ingredients": [
+    {
+      "ingredient": {
+        "item": "minecraft:iron_ingot"
+      },
+      "count": 4
+    },
+    {
+      "ingredient": {
+        "item": "minecraft:glass"
+      },
+      "count": 3
+    },
+    {
+      "item": "minecraft:brewing_stand"
+    },
+    {
+      "item": "minecraft:redstone"
+    }
+  ],
+  "result": {
+    "id": "mutagen:synthesizer",
+    "count": 1
+  }
+}

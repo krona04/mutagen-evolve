@@ -1,0 +1,16 @@
+{
+  "replace": false,
+  "values": [
+    "minecraft:crafting_table",
+    "#minecraft:anvil",
+    "minecraft:enchanting_table",
+    "minecraft:smithing_table",
+    "minecraft:grindstone",
+    "minecraft:loom",
+    "minecraft:stonecutter",
+    "minecraft:cartography_table",
+    "minecraft:fletching_table",
+    "minecraft:brewing_stand",
+    "minecraft:lectern"
+  ]
+}

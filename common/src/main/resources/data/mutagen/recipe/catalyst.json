@@ -1,0 +1,15 @@
+{
+  "type": "mutagen:bio_workbench",
+  "ingredients": [
+    {
+      "item": "minecraft:nether_wart"
+    },
+    {
+      "item": "minecraft:quartz"
+    }
+  ],
+  "result": {
+    "id": "mutagen:catalyst",
+    "count": 2
+  }
+}

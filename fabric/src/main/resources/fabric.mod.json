@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "id": "mutagen",
+  "version": "${version}",
+  "name": "Mutagen",
+  "description": "",
+  "authors": [
+    "Krona04"
+  ],
+  "contact": {
+    "homepage": ""
+  },
+  "license": "MIT",
+  "icon": "assets/mutagen/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "net.krona.mutagen.fabric.MutagenFabric"
+    ],
+    "client": [
+      "net.krona.mutagen.fabric.client.MutagenFabricClient"
+    ]
+  },
+  "mixins": [
+    "mutagen.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.19.5",
+    "minecraft": "~1.21.1",
+    "java": ">=21",
+    "architectury": ">=13.0.11",
+    "fabric-api": "*"
+  },
+  "suggests": {
+    "pehkui": "*"
+  }
+}

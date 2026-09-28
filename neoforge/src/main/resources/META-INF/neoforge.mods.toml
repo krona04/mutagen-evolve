@@ -1,0 +1,45 @@
+modLoader = "javafml"
+loaderVersion = "[2,)"
+#issueTrackerURL = ""
+license = "MIT"
+
+[[mods]]
+modId = "mutagen"
+version = "${version}"
+displayName = "Mutagen"
+authors = "Krona04"
+description = '''
+
+'''
+#logoFile = ""
+
+[[dependencies.mutagen]]
+modId = "neoforge"
+type = "required"
+versionRange = "[21,)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.mutagen]]
+modId = "minecraft"
+type = "required"
+versionRange = "[1.21.1,)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.mutagen]]
+modId = "architectury"
+type = "required"
+versionRange = "[13.0.11,)"
+ordering = "AFTER"
+side = "BOTH"
+
+[[dependencies.mutagen]]
+modId = "pehkui"
+type = "optional"
+versionRange = "[3.8,)"
+ordering = "NONE"
+side = "BOTH"
+
+[[mixins]]
+config = "mutagen.mixins.json"

@@ -1,0 +1,47 @@
+name: Performance
+description: TPS, MSPT or frame rate problems
+labels: ["performance"]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Mutagen version
+      placeholder: "0.1"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: side
+    attributes:
+      label: Where
+      options:
+        - Server tick (TPS / MSPT)
+        - Client frame rate
+        - Both
+    validations:
+      required: true
+
+  - type: textarea
+    id: numbers
+    attributes:
+      label: Numbers
+      description: |
+        MSPT without the mod and with it (`/debug start` … `/debug stop`), or FPS with and without.
+        How many players, and at which stages were their strains?
+    validations:
+      required: true
+
+  - type: input
+    id: hardware
+    attributes:
+      label: Hardware
+      placeholder: "Ryzen 5 5600, 16 GB, RTX 3060"
+
+  - type: checkboxes
+    id: rendering
+    attributes:
+      label: Rendering setup
+      options:
+        - label: Sodium
+        - label: Iris
+        - label: Shaders enabled

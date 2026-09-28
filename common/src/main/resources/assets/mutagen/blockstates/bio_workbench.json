@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "mutagen:block/bio_workbench"
+    }
+  }
+}

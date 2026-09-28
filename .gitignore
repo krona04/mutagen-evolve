@@ -1,0 +1,33 @@
+# gradle
+.gradle/
+build/
+out/
+classes/
+
+# idea
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# eclipse / vscode
+.settings/
+.metadata/
+bin/
+.classpath
+.project
+.vscode/
+
+# macos
+*.DS_Store
+
+# fabric / neoforge dev runs
+run/
+runs/
+run-data/
+*/run/
+.architectury-transformer/
+
+# локальные логи дымовых тестов
+server-test.log
+neoforge-test.log

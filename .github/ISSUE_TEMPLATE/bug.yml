@@ -1,0 +1,69 @@
+name: Bug report
+description: Something crashed, broke or behaved wrong
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before filing: the prototype's known gaps are listed at the bottom of
+        [docs/TESTING.md](../../blob/main/docs/TESTING.md). Missing abilities, hybrid models and
+        strains beyond the three are planned, not broken.
+
+  - type: input
+    id: version
+    attributes:
+      label: Mutagen version
+      placeholder: "0.1"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: loader
+    attributes:
+      label: Loader
+      options:
+        - Fabric
+        - NeoForge
+    validations:
+      required: true
+
+  - type: input
+    id: loader_version
+    attributes:
+      label: Loader and Minecraft version
+      placeholder: "Fabric 0.19.5 / MC 1.21.1"
+    validations:
+      required: true
+
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, what happened instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: mods
+    attributes:
+      label: Other mods
+      description: The full list, or "dependencies only".
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Log or crash report
+      description: Attach `latest.log`. On a crash, the whole crash report.
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: state
+    attributes:
+      label: Did it involve saved state?
+      options:
+        - label: The strain was lost or changed after relog, death or dimension change
+        - label: The indicator and the visible body disagreed
+        - label: It happened on a dedicated server

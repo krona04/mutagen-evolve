@@ -1,0 +1,93 @@
+{
+  "entity": "minecraft:skeleton",
+  "color": "#D9D9D2",
+  "difficulty": 2,
+  "synthesis": {
+    "catalyst": "mutagen:catalyst",
+    "catalyst_count": 1,
+    "time": 400
+  },
+  "body": {
+    "model_layer": "minecraft:skeleton",
+    "spread": [
+      "right_arm",
+      "right_leg",
+      "left_leg",
+      "left_arm",
+      "body",
+      "head"
+    ],
+    "skin": "texture",
+    "parts": [
+      {
+        "part": "head"
+      },
+      {
+        "part": "body"
+      },
+      {
+        "part": "right_arm"
+      },
+      {
+        "part": "left_arm"
+      },
+      {
+        "part": "right_leg"
+      },
+      {
+        "part": "left_leg"
+      }
+    ],
+    "reach": 0.0
+  },
+  "traits": [
+    {
+      "type": "mutagen:effect_immunity",
+      "from_stage": "manifestation",
+      "effects": [
+        "minecraft:poison",
+        "minecraft:hunger"
+      ],
+      "description": "mutagen.trait.skeleton.no_flesh"
+    },
+    {
+      "type": "mutagen:arrow_power",
+      "from_stage": "mutation",
+      "factor": 1.5
+    },
+    {
+      "type": "mutagen:attribute",
+      "from_stage": "mutation",
+      "attribute": "minecraft:generic.max_health",
+      "amount": -4.0,
+      "description": "mutagen.trait.skeleton.brittle"
+    },
+    {
+      "type": "mutagen:damage_factor",
+      "from_stage": "mutation",
+      "damage_type": "#minecraft:is_explosion",
+      "factor": 1.5,
+      "description": "mutagen.trait.skeleton.blast_fragile"
+    },
+    {
+      "type": "mutagen:sun_burn",
+      "from_stage": "domination"
+    },
+    {
+      "type": "mutagen:no_sleep",
+      "from_stage": "mutation"
+    },
+    {
+      "type": "mutagen:no_eating",
+      "from_stage": "domination",
+      "food_level": 17
+    },
+    {
+      "type": "mutagen:no_crafting",
+      "from_stage": "full",
+      "stations": "#mutagen:fine_work",
+      "grid": false,
+      "description": "mutagen.trait.skeleton.bony_fingers"
+    }
+  ]
+}

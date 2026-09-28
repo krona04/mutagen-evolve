@@ -1,0 +1,18 @@
+{
+  "type": "mutagen:bio_workbench",
+  "ingredients": [
+    {
+      "item": "minecraft:glass_bottle"
+    },
+    {
+      "item": "minecraft:iron_ingot"
+    },
+    {
+      "item": "minecraft:iron_nugget"
+    }
+  ],
+  "result": {
+    "id": "mutagen:syringe",
+    "count": 2
+  }
+}

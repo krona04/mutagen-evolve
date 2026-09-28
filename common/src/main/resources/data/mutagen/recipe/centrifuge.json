@@ -1,0 +1,27 @@
+{
+  "type": "mutagen:bio_workbench",
+  "ingredients": [
+    {
+      "ingredient": {
+        "item": "minecraft:iron_ingot"
+      },
+      "count": 5
+    },
+    {
+      "ingredient": {
+        "item": "minecraft:glass"
+      },
+      "count": 2
+    },
+    {
+      "item": "minecraft:redstone"
+    },
+    {
+      "item": "minecraft:furnace"
+    }
+  ],
+  "result": {
+    "id": "mutagen:centrifuge",
+    "count": 1
+  }
+}

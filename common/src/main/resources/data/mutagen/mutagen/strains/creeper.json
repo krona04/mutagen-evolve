@@ -1,0 +1,112 @@
+{
+  "entity": "minecraft:creeper",
+  "color": "#59B34C",
+  "difficulty": 3,
+  "synthesis": {
+    "catalyst": "mutagen:catalyst",
+    "catalyst_count": 2,
+    "time": 500
+  },
+  "body": {
+    "model_layer": "minecraft:creeper",
+    "spread": [
+      "body",
+      "head",
+      "right_arm",
+      "left_arm",
+      "right_leg",
+      "left_leg"
+    ],
+    "skin": "texture",
+    "parts": [
+      {
+        "part": "head"
+      },
+      {
+        "part": "body"
+      },
+      {
+        "part": "right_front_leg",
+        "bone": "right_arm"
+      },
+      {
+        "part": "left_front_leg",
+        "bone": "left_arm"
+      },
+      {
+        "part": "right_hind_leg",
+        "bone": "right_leg"
+      },
+      {
+        "part": "left_hind_leg",
+        "bone": "left_leg"
+      }
+    ],
+    "reach": -0.5
+  },
+  "traits": [
+    {
+      "type": "mutagen:damage_factor",
+      "from_stage": "manifestation",
+      "damage_type": "#minecraft:is_explosion",
+      "factor": 0.0,
+      "description": "mutagen.trait.explosion_immunity"
+    },
+    {
+      "type": "mutagen:cat_fear",
+      "from_stage": "manifestation"
+    },
+    {
+      "type": "mutagen:attribute",
+      "from_stage": "mutation",
+      "attribute": "minecraft:generic.movement_speed",
+      "amount": 0.12,
+      "operation": "add_multiplied_total",
+      "description": "mutagen.trait.creeper.quiet"
+    },
+    {
+      "type": "mutagen:attribute",
+      "from_stage": "mutation",
+      "attribute": "minecraft:generic.attack_damage",
+      "amount": -1.0,
+      "description": "mutagen.trait.creeper.no_hands"
+    },
+    {
+      "type": "mutagen:damage_factor",
+      "from_stage": "mutation",
+      "damage_type": "#minecraft:is_fire",
+      "factor": 1.5,
+      "description": "mutagen.trait.fire_vulnerability"
+    },
+    {
+      "type": "mutagen:armor_rejection",
+      "from_stage": "full"
+    },
+    {
+      "type": "mutagen:no_offhand",
+      "from_stage": "mutation"
+    },
+    {
+      "type": "mutagen:inventory_limit",
+      "from_stage": "domination",
+      "hotbar": 5
+    },
+    {
+      "type": "mutagen:no_tools",
+      "from_stage": "domination"
+    },
+    {
+      "type": "mutagen:no_crafting",
+      "from_stage": "domination"
+    },
+    {
+      "type": "mutagen:inventory_limit",
+      "from_stage": "full",
+      "hotbar": 3
+    },
+    {
+      "type": "mutagen:no_building",
+      "from_stage": "full"
+    }
+  ]
+}

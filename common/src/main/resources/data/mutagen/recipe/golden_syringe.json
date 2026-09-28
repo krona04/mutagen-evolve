@@ -1,0 +1,21 @@
+{
+  "type": "mutagen:bio_workbench",
+  "ingredients": [
+    {
+      "item": "mutagen:syringe"
+    },
+    {
+      "ingredient": {
+        "item": "minecraft:gold_ingot"
+      },
+      "count": 3
+    },
+    {
+      "item": "minecraft:redstone"
+    }
+  ],
+  "result": {
+    "id": "mutagen:golden_syringe",
+    "count": 1
+  }
+}

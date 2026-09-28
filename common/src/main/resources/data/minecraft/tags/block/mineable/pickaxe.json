@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    "mutagen:bio_workbench",
+    "mutagen:centrifuge",
+    "mutagen:synthesizer",
+    "mutagen:sequencer"
+  ]
+}

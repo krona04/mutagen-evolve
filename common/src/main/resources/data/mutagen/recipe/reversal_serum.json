@@ -1,0 +1,15 @@
+{
+  "type": "mutagen:bio_workbench",
+  "ingredients": [
+    {
+      "item": "mutagen:carrier_fluid"
+    },
+    {
+      "item": "minecraft:fermented_spider_eye"
+    }
+  ],
+  "result": {
+    "id": "mutagen:reversal_serum",
+    "count": 1
+  }
+}

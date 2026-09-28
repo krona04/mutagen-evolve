@@ -1,0 +1,18 @@
+{
+  "type": "mutagen:bio_workbench",
+  "ingredients": [
+    {
+      "item": "minecraft:potion"
+    },
+    {
+      "item": "minecraft:sugar"
+    },
+    {
+      "item": "minecraft:slime_ball"
+    }
+  ],
+  "result": {
+    "id": "mutagen:carrier_fluid",
+    "count": 1
+  }
+}
