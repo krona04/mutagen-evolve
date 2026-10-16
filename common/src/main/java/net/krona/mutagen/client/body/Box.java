@@ -11,9 +11,9 @@ import java.util.Map;
 import java.util.WeakHashMap;
 
 /**
- * Габариты части модели в её собственных координатах (в пикселях модели, от точки поворота).
- * Считаются по кубам части и её потомков; повороты потомков не учитываются — для оценки формы
- * конечности этого достаточно.
+ * Bounds of a model part in its own coordinates (in model pixels, from the pivot).
+ * Computed from the cubes of the part and its children; children's rotations are ignored — for estimating a limb's
+ * shape that is enough.
  */
 @Environment(EnvType.CLIENT)
 public record Box(float minX, float minY, float minZ, float maxX, float maxY, float maxZ) {
@@ -51,7 +51,7 @@ public record Box(float minX, float minY, float minZ, float maxX, float maxY, fl
         return new Vector3f(maxX - minX, maxY - minY, maxZ - minZ);
     }
 
-    /** Своё смешивание по каждой оси: толщина и длина кости меняются в разное время. */
+    /** Separate blending per axis: the bone's thickness and length change at different times. */
     public Box lerp(Box to, float tx, float ty, float tz) {
         return new Box(minX + (to.minX - minX) * tx, minY + (to.minY - minY) * ty, minZ + (to.minZ - minZ) * tz,
                 maxX + (to.maxX - maxX) * tx, maxY + (to.maxY - maxY) * ty, maxZ + (to.maxZ - maxZ) * tz);
@@ -62,7 +62,7 @@ public record Box(float minX, float minY, float minZ, float maxX, float maxY, fl
                 maxX + (to.maxX - maxX) * t, maxY + (to.maxY - maxY) * t, maxZ + (to.maxZ - maxZ) * t);
     }
 
-    /** Растянуть вокруг центра. */
+    /** Stretch around the center. */
     public Box scaled(float x, float y, float z) {
         float cx = (minX + maxX) * 0.5F;
         float cy = (minY + maxY) * 0.5F;
@@ -74,8 +74,8 @@ public record Box(float minX, float minY, float minZ, float maxX, float maxY, fl
     }
 
     /**
-     * Как вписать эту коробку в {@code target}: масштаб по осям и сдвиг в координатах части.
-     * Точка {@code v} этой коробки переходит в {@code offset + scale * v}.
+     * How to fit this box into {@code target}: per-axis scale and offset in part coordinates.
+     * Point {@code v} of this box maps to {@code offset + scale * v}.
      */
     public Fit fit(Box target) {
         Vector3f scale = new Vector3f(ratio(target.maxX - target.minX, maxX - minX),

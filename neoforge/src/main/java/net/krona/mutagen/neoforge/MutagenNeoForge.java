@@ -11,8 +11,8 @@ public final class MutagenNeoForge {
     public MutagenNeoForge(IEventBus modBus) {
         Mutagen.init();
 
-        // Клиентские слушатели вешаются при конструировании мода: событие регистрации
-        // экранов проходит раньше, чем отрабатывает отложенная работа FMLClientSetupEvent.
+        // Client listeners are attached when the mod is constructed: the screen registration event
+        // fires before the deferred work of FMLClientSetupEvent runs.
         EnvExecutor.runInEnv(Env.CLIENT,
                 () -> () -> net.krona.mutagen.neoforge.client.MutagenNeoForgeClient.init(modBus));
     }

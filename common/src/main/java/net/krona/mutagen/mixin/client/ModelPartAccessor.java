@@ -8,8 +8,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Геометрия части модели. Превращению нужны настоящие размеры кубов, чтобы кость игрока могла
- * плавно принять форму части существа, а ваниль держит их закрытыми.
+ * Geometry of a model part. The transformation needs the actual cube sizes so the player's bone can
+ * smoothly take the shape of the creature's part, and vanilla keeps them private.
  */
 @Mixin(ModelPart.class)
 public interface ModelPartAccessor {

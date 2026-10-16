@@ -4,11 +4,11 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 
 /**
- * Рисунок заражения: к какому порогу прогресса заражается каждый пиксель текстуры.
+ * Infection pattern: at which progress threshold each texture pixel becomes infected.
  * <p>
- * Шум двухслойный — крупные пятна по 3–4 пикселя и мелкая рябь поверх, — поэтому заражение
- * расползается островками с рваным краем, а не заливкой. Зерно берётся из UUID игрока:
- * у каждого носителя свой рисунок, и он не меняется от кадра к кадру и от захода к заходу.
+ * The noise has two layers — large blotches of 3–4 pixels and fine ripple on top — so the infection
+ * spreads in islands with ragged edges rather than as a fill. The seed comes from the player's UUID:
+ * each host has their own pattern, and it doesn't change from frame to frame or from session to session.
  */
 @Environment(EnvType.CLIENT)
 public final class InfectionMask {
@@ -20,14 +20,14 @@ public final class InfectionMask {
         this.seed = seed;
     }
 
-    /** Значение 0–1: пиксель заражён, когда фаза его кости выше этого значения. */
+    /** Value 0–1: a pixel is infected when its bone's phase is above this value. */
     public float at(int x, int y) {
         float cells = smoothNoise(x / (float) CELL, y / (float) CELL, seed);
         float grain = hash(x, y, seed ^ 0x5DEECE66DL);
         return cells * 0.72F + grain * 0.28F;
     }
 
-    /** Отдельная рябь для оттенка: заражённая кожа пятнистая, а не ровно покрашенная. */
+    /** A separate ripple for tint: infected skin is mottled, not evenly painted. */
     public float shade(int x, int y) {
         return hash(x * 7 + 3, y * 13 + 1, seed ^ 0x2545F4914F6CDD1DL);
     }

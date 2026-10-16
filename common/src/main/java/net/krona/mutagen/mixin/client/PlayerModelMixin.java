@@ -9,12 +9,12 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * Перестройка скелета поверх ванильной анимации: пропорции, осанка и подёргивания мутанта.
- * Броня и части существа берут позу у костей уже после этого, поэтому идут за телом.
+ * Skeleton restructuring on top of the vanilla animation: the mutant's proportions, posture and twitches.
+ * Armor and creature parts take their pose from the bones after this, so they follow the body.
  */
 @Mixin(PlayerModel.class)
 public abstract class PlayerModelMixin {
-    /** Модель одна на всех игроков: каждый кадр начинается с исходной позы, иначе добавки копятся. */
+    /** One model for all players: every frame starts from the initial pose, otherwise offsets accumulate. */
     @Inject(method = "setupAnim(Lnet/minecraft/world/entity/LivingEntity;FFFFF)V", at = @At("HEAD"))
     private void mutagen$resetPose(LivingEntity entity, float limbSwing, float limbSwingAmount,
                                        float ageInTicks, float netHeadYaw, float headPitch, CallbackInfo ci) {

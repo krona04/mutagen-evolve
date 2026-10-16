@@ -19,10 +19,10 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Читает штаммы из датапаков: {@code data/<namespace>/mutagen/strains/<name>.json}.
+ * Reads strains from datapacks: {@code data/<namespace>/mutagen/strains/<name>.json}.
  * <p>
- * Срабатывает при запуске сервера и при каждом {@code /reload}. Сломанный файл не роняет загрузку:
- * он пропускается, а причина пишется в лог и показывается операторам в чате.
+ * Runs on server start and on every {@code /reload}. A broken file doesn't break loading:
+ * it is skipped, and the reason is logged and shown to operators in chat.
  */
 public final class StrainLoader extends SimpleJsonResourceReloadListener {
     public static final String DIRECTORY = Mutagen.MOD_ID + "/strains";
@@ -47,7 +47,7 @@ public final class StrainLoader extends SimpleJsonResourceReloadListener {
                 errors.add(id + ": not a JSON object");
                 continue;
             }
-            // id штамма — это путь файла; поле в самом JSON не нужно и перезаписывается.
+            // The strain id is the file path; the field in the JSON itself isn't needed and is overwritten.
             JsonObject json = entry.getValue().getAsJsonObject().deepCopy();
             json.addProperty("id", id.toString());
 
@@ -68,8 +68,8 @@ public final class StrainLoader extends SimpleJsonResourceReloadListener {
     }
 
     /**
-     * Итог последней загрузки, если его ещё никто не забрал. Сервер забирает его в своём тике,
-     * рассылает новые штаммы игрокам и сообщает операторам, что получилось.
+     * Result of the last load, if nobody has taken it yet. The server takes it in its tick,
+     * broadcasts the new strains to players and tells operators how it went.
      */
     public static Result consumePending() {
         Result result = pending;

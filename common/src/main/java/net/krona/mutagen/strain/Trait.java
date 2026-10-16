@@ -9,39 +9,39 @@ import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 
 /**
- * Черта штамма: то, что штамм даёт или отнимает у носителя.
+ * Strain trait: something the strain gives to or takes away from the host.
  * <p>
- * С 0.2 черты читаются из датапака: у каждой есть {@link TraitType}, который знает её JSON-формат.
+ * Since 0.2 traits are read from the datapack: each one has a {@link TraitType} that knows its JSON format.
  */
 public interface Trait {
-    /** Тип черты — по нему черта пишется в JSON и узнаётся при чтении. */
+    /** Trait type — the trait is written to JSON and recognized on reading by it. */
     TraitType<?> type();
 
-    /** Стадия, начиная с которой черта работает. */
+    /** The stage from which the trait takes effect. */
     Stage minStage();
 
-    /** Короткое описание для подсказок и гено-древа. */
+    /** Short description for tooltips and the gene tree. */
     Component description();
 
-    /** Слабость или сила. Гено-древо красит слабости красным, силы — зелёным. */
+    /** Weakness or strength. The gene tree paints weaknesses red, strengths green. */
     default boolean weakness() {
         return false;
     }
 
-    /** Раз в секунду на сервере, пока стадия не ниже {@link #minStage()}. */
+    /** Once per second on the server, while the stage is not below {@link #minStage()}. */
     default void tick(ServerPlayer player, Stage stage) {
     }
 
-    /** Постоянные модификаторы атрибутов. Пересобираются при каждой смене стадии. */
+    /** Permanent attribute modifiers. Rebuilt on every stage change. */
     default void attributes(Stage stage, AttributeSink sink) {
     }
 
-    /** Множитель входящего урона: слабости и иммунитеты. */
+    /** Incoming damage multiplier: weaknesses and immunities. */
     default float modifyIncomingDamage(DamageSource source, float amount, Stage stage) {
         return amount;
     }
 
-    /** Иммунитет к эффектам. */
+    /** Effect immunity. */
     default boolean blocksEffect(Holder<MobEffect> effect, Stage stage) {
         return false;
     }

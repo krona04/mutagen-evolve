@@ -17,8 +17,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
- * Состояние мутации живёт прямо на игроке и сохраняется вместе с ним.
- * Один и тот же код работает на обеих платформах, потому что цель миксина — ванильный класс.
+ * The mutation state lives right on the player and is saved together with them.
+ * The same code works on both platforms, because the mixin's target is a vanilla class.
  */
 @Mixin(Player.class)
 public abstract class PlayerMixin implements MutagenPlayer {
@@ -43,9 +43,9 @@ public abstract class PlayerMixin implements MutagenPlayer {
     }
 
     /**
-     * Настоящие габариты (0.3): ширина, высота и глаза хитбокса идут к размерам существа отдельно друг
-     * от друга, а не одним общим масштабом. Ванильный атрибут масштаба применяется к результату после,
-     * поэтому здесь он заранее вынесен за скобки — итог совпадает с формой тела ровно.
+     * True dimensions (0.3): hitbox width, height and eyes move towards the creature's dimensions independently
+     * of each other, not by one shared scale. The vanilla scale attribute is applied to the result afterwards,
+     * so here it is factored out in advance — the result matches the body shape exactly.
      */
     @Inject(method = "getDefaultDimensions", at = @At("RETURN"), cancellable = true)
     private void mutagen$bodyDimensions(Pose pose, CallbackInfoReturnable<EntityDimensions> cir) {
@@ -58,9 +58,9 @@ public abstract class PlayerMixin implements MutagenPlayer {
         }
         EntityDimensions current = cir.getReturnValue();
         if (!Bodies.ownsDimensions()) {
-            // Хитбокс меняет Pehkui, и глаза у него идут строго за высотой хитбокса. У существа они
-            // посажены иначе (у крипера ниже), поэтому высота глаз поправляется здесь — Pehkui затем
-            // масштабирует уже поправленное значение.
+            // Pehkui changes the hitbox, and its eyes strictly follow the hitbox height. The creature's eyes
+            // are placed differently (lower for a creeper), so eye height is corrected here — Pehkui then
+            // scales the already corrected value.
             cir.setReturnValue(current.withEyeHeight(current.eyeHeight() * shape.eyeFactor() / shape.heightFactor()));
             return;
         }

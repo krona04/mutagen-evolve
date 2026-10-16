@@ -20,15 +20,15 @@ import java.util.Locale;
 import java.util.Optional;
 
 /**
- * Описание штамма: от какого существа взят геном, как он меняет тело и чем за это платит носитель.
+ * Strain description: which creature the genome is taken from, how it changes the body and what the host pays for it.
  * <p>
- * С 0.2 штаммы живут в датапаках: {@code data/<namespace>/mutagen/strains/<name>.json},
- * id штамма — {@code <namespace>:<name>}. Формат описан в {@code docs/DESIGN.md}.
+ * Since 0.2 strains live in datapacks: {@code data/<namespace>/mutagen/strains/<name>.json},
+ * the strain id is {@code <namespace>:<name>}. The format is described in {@code docs/DESIGN.md}.
  */
 public final class Strain {
     private static final int DEFAULT_COLOR = 0x7FAE6B;
 
-    /** Цвет пишется числом или строкой {@code "#RRGGBB"}. */
+    /** Color is written as a number or a {@code "#RRGGBB"} string. */
     private static final Codec<Integer> COLOR_CODEC = Codec.withAlternative(Codec.INT,
             Codec.STRING.comapFlatMap(Strain::parseColor, color -> String.format("#%06X", color)));
 
@@ -51,9 +51,9 @@ public final class Strain {
     private final Synthesis synthesis;
     private final Body body;
     private final List<Trait> traits;
-    /** Черты, активные на каждой стадии: считаются один раз, а спрашиваются каждую секунду. */
+    /** Traits active at each stage: computed once, queried every second. */
     private final List<List<Trait>> byStage;
-    /** Место каждой кости в очереди заражения: считается один раз, спрашивается каждый кадр. */
+    /** Each bone's place in the infection queue: computed once, queried every frame. */
     private final int[] spreadIndex;
 
     public Strain(ResourceLocation id, EntityType<?> entityType, int color, float targetScale, int difficulty,
@@ -103,20 +103,20 @@ public final class Strain {
         return entityType;
     }
 
-    /** Цвет для оверлея кожи, частиц и интерфейса. */
+    /** Color for the skin overlay, particles and HUD. */
     public int color() {
         return color;
     }
 
     /**
-     * Общий масштаб модели носителя. Форму тела задаёт сама модель существа, поэтому для штаммов
-     * с моделью он остаётся 1; нужен только штаммам без модели, которые меняют лишь кожу.
+     * Overall scale of the host's model. The body shape is set by the creature's model itself, so for strains
+     * with a model it stays 1; it's only needed for strains without a model, which change just the skin.
      */
     public float targetScale() {
         return targetScale;
     }
 
-    /** Сложность вида: чем выше, тем медленнее секвенирование. */
+    /** Species complexity: the higher, the slower the sequencing. */
     public int difficulty() {
         return difficulty;
     }
@@ -130,8 +130,8 @@ public final class Strain {
     }
 
     /**
-     * Хитбокс и глаза в полной форме — те же, что у самого существа в игре, если штамм не задал своих.
-     * Так превращённый игрок занимает ровно столько места, сколько занимал бы моб.
+     * Hitbox and eyes in full form — the same as the creature's own in game, unless the strain specifies its own.
+     * This way a transformed player takes up exactly as much space as the mob would.
      */
     public float targetWidth() {
         return body.width().orElseGet(() -> entityType.getDimensions().width());
@@ -146,8 +146,8 @@ public final class Strain {
     }
 
     /**
-     * Слой модели существа для гибридных стадий: {@code "minecraft:zombie"} или {@code "minecraft:zombie#main"}.
-     * По умолчанию — id самого существа, так названы слои почти всех ванильных мобов.
+     * Creature model layer for the hybrid stages: {@code "minecraft:zombie"} or {@code "minecraft:zombie#main"}.
+     * Defaults to the creature's own id — that's how the layers of almost all vanilla mobs are named.
      */
     public String modelLayer() {
         return body.modelLayer().orElseGet(() -> BuiltInRegistries.ENTITY_TYPE.getKey(entityType) + "#main");
@@ -170,8 +170,8 @@ public final class Strain {
     }
 
     /**
-     * Имя штамма. Если у штамма из чужого датапака нет перевода, имя собирается из имени существа —
-     * игрок увидит «Штамм: Ведьма», а не сырой ключ.
+     * Strain name. If a strain from a third-party datapack has no translation, the name is built from the creature's name —
+     * the player will see "Strain: Witch" rather than a raw key.
      */
     public Component displayName() {
         String key = translationKey();
@@ -182,8 +182,8 @@ public final class Strain {
     }
 
     /**
-     * Цена синтеза: какой катализатор нужен, сколько его уходит за прогон и сколько тиков идёт работа.
-     * Сложные виды стоят дороже — это часть баланса 0.2.1.
+     * Synthesis cost: which catalyst is needed, how much of it is used per run and how many ticks the work takes.
+     * Complex species cost more — this is part of the 0.2.1 balance.
      */
     public record Synthesis(Optional<Item> catalystItem, int catalystCount, int time) {
         public static final Synthesis DEFAULT = new Synthesis(Optional.empty(), 1, 300);
@@ -199,7 +199,7 @@ public final class Strain {
         }
     }
 
-    /** Кость игрока, на которую садится часть существа. */
+    /** The player bone the creature part attaches to. */
     public enum Bone {
         HEAD("head"), BODY("body"), RIGHT_ARM("right_arm"), LEFT_ARM("left_arm"),
         RIGHT_LEG("right_leg"), LEFT_LEG("left_leg");
@@ -231,13 +231,13 @@ public final class Strain {
     }
 
     /**
-     * Часть существа и кость игрока, которая в неё превращается. {@code part} — путь части в модели существа
-     * ({@code "head"}, {@code "body/tail"}), {@code bone} — кость игрока; если часть называется как кость,
-     * кость можно не писать.
+     * A creature part and the player bone that turns into it. {@code part} is the part's path in the creature model
+     * ({@code "head"}, {@code "body/tail"}), {@code bone} is the player bone; if the part is named like the bone,
+     * the bone can be omitted.
      * <p>
-     * Обычная часть — цель превращения: кость игрока плавно принимает её размеры и положение.
-     * {@code grow} — часть, которой у человека нет (задние ноги крипера, хвост): она вырастает из тела
-     * на своём месте и двигается вместе с {@code bone}. {@code scale} — поправка к размеру части.
+     * A regular part is a transformation target: the player's bone smoothly takes on its size and position.
+     * {@code grow} — a part humans don't have (a creeper's hind legs, a tail): it grows out of the body
+     * in its own place and moves together with {@code bone}. {@code scale} — a correction to the part's size.
      */
     public record Part(String part, Bone bone, boolean grow, Vector3f scale) {
         private static final Vector3f ONE = new Vector3f(1.0F, 1.0F, 1.0F);
@@ -266,8 +266,8 @@ public final class Strain {
     }
 
     /**
-     * Откуда берутся цвета заражённой кожи: {@code texture} — из текстуры самого существа (если её раскладка
-     * совпадает с человеческой, как у зомби, скелета и головы крипера), {@code color} — из цвета штамма.
+     * Where the infected skin colors come from: {@code texture} — from the creature's own texture (if its layout
+     * matches the human one, as with the zombie, the skeleton and the creeper's head), {@code color} — from the strain color.
      */
     public enum SkinSource {
         COLOR("color"), TEXTURE("texture");
@@ -293,8 +293,8 @@ public final class Strain {
     }
 
     /**
-     * Поза кости к полной форме: поворот в градусах, который добавляется к её движению. Форму кости
-     * задаёт модель существа, а здесь — только осанка: вытянутые руки зомби, опущенная голова.
+     * Bone pose towards the full form: a rotation in degrees added to its movement. The bone's shape
+     * is set by the creature's model, and here only the posture: a zombie's outstretched arms, a lowered head.
      */
     public record Morph(Bone bone, Vector3f rotation) {
         public static final Codec<Morph> CODEC = RecordCodecBuilder.create(instance -> instance.group(
@@ -304,8 +304,8 @@ public final class Strain {
     }
 
     /**
-     * Тело штамма: как по нему идёт заражение, в какие части существа превращаются кости игрока,
-     * какие кости втягиваются, как меняется поза и какие у носителя габариты в полной форме.
+     * Strain body: how the infection spreads through it, which creature parts the player's bones turn into,
+     * which bones retract, how the pose changes and what dimensions the host has in full form.
      */
     public record Body(Optional<String> modelLayer, Optional<List<Part>> parts, List<Bone> absorb,
                        Optional<Float> width, Optional<Float> height, Optional<Float> eyeHeight, float reach,

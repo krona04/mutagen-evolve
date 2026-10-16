@@ -19,18 +19,18 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Загруженные штаммы.
+ * Loaded strains.
  * <p>
- * Набор заменяется целиком одним снимком: при перезагрузке датапака сервер и клиент в одиночной игре
- * видят либо старый набор, либо новый, но никогда не половину. Штаммы в Java больше не пишутся —
- * их даёт {@link StrainLoader} из датапаков, а на клиент они приезжают пакетом.
+ * The set is replaced entirely with a single snapshot: on datapack reload the server and the singleplayer client
+ * see either the old set or the new one, but never half. Strains are no longer written in Java —
+ * they are provided by {@link StrainLoader} from datapacks and arrive on the client in a packet.
  */
 public final class Strains {
     private static volatile Snapshot current = Snapshot.EMPTY;
 
     /**
-     * Атрибуты, которые мод трогает. Набор только растёт: если перезагрузка убрала черту,
-     * её модификатор всё равно нужно снять с игрока.
+     * Attributes the mod touches. The set only grows: if a reload removed a trait,
+     * its modifier still has to be removed from the player.
      */
     private static final Set<Holder<Attribute>> TRACKED_ATTRIBUTES = ConcurrentHashMap.newKeySet();
 
@@ -44,7 +44,7 @@ public final class Strains {
     private Strains() {
     }
 
-    /** Заменяет весь набор. Если два штамма претендуют на одно существо, побеждает первый по id. */
+    /** Replaces the whole set. If two strains claim the same creature, the first by id wins. */
     public static void replace(Collection<Strain> strains) {
         Map<ResourceLocation, Strain> byId = new LinkedHashMap<>();
         Map<EntityType<?>, Strain> byEntity = new LinkedHashMap<>();
@@ -87,7 +87,7 @@ public final class Strains {
         return current.byId().size();
     }
 
-    /** Годится ли предмет в катализатор хоть одного штамма — для слота синтезатора. */
+    /** Whether an item works as a catalyst for at least one strain — for the synthesizer slot. */
     public static boolean isCatalyst(ItemStack stack) {
         return current.catalysts().contains(stack.getItem());
     }
@@ -96,7 +96,7 @@ public final class Strains {
         return TRACKED_ATTRIBUTES;
     }
 
-    /** Неизменяемый снимок набора: читается без блокировок с любого потока. */
+    /** Immutable snapshot of the set: read without locks from any thread. */
     private record Snapshot(Map<ResourceLocation, Strain> byId, Map<EntityType<?>, Strain> byEntity,
                             Set<Item> catalysts) {
         static final Snapshot EMPTY = new Snapshot(Map.of(), Map.of(), Set.of());

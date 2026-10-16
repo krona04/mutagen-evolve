@@ -12,10 +12,10 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * Игрок появился в поле зрения другого: тот сразу получает его облик.
+ * A player came into another's view: that one immediately receives their appearance.
  * <p>
- * До 0.2.1 состояние рассылалось только при изменении, и зафиксированный игрок в полной форме
- * оставался человеком для всех, кто подошёл к нему позже.
+ * Before 0.2.1 the state was broadcast only on change, and a fixed player in full form
+ * stayed human for everyone who approached them later.
  */
 @Mixin(ServerEntity.class)
 public abstract class ServerEntityMixin {

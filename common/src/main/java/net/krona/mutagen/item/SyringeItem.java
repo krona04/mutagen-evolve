@@ -28,17 +28,17 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Шприц: правый клик по мобу забирает образец ткани.
- * Моб это замечает и злится, а повторно отдавать материал сразу не будет.
+ * Syringe: right-clicking a mob takes a tissue sample.
+ * The mob notices and gets angry, and won't give material again right away.
  * <p>
- * Материал шприца влияет на чистоту: железный одноразовый, золотой и незеритовый служат долго
- * и берут материал бережнее — +10 и +25 к качеству.
+ * The syringe material affects purity: the iron one is single-use, the golden and netherite ones last long
+ * and take material more gently — +10 and +25 to quality.
  */
 public class SyringeItem extends Item {
-    /** Метка «из спавнера»: ставится при появлении моба, см. {@code MobMixin}. */
+    /** "From a spawner" mark: set when the mob spawns, see {@code MobMixin}. */
     public static final String SPAWNER_TAG = Mutagen.MOD_ID + ".spawner";
 
-    /** Метка «недавно взят образец»: десять минут игрового времени. */
+    /** "Sample recently taken" mark: ten minutes of game time. */
     private static final long COOLDOWN_TICKS = 12000L;
     private static final Map<UUID, Long> RECENT_SAMPLES = new HashMap<>();
 
@@ -110,7 +110,7 @@ public class SyringeItem extends Item {
         return InteractionResult.CONSUME;
     }
 
-    /** Первый образец вида вносит его в гено-древо. */
+    /** The first sample of a species adds it to the gene tree. */
     private static void discover(ServerPlayer player, Strain strain) {
         MutagenKnowledge knowledge = MutagenKnowledge.get(player.server);
         if (knowledge.discover(player.getUUID(), strain.id())) {
@@ -121,8 +121,8 @@ public class SyringeItem extends Item {
     }
 
     /**
-     * Качество образца. Ослабленный и обездвиженный организм отдаёт материал охотнее,
-     * детёныш не отдаёт почти ничего, а моб из спавнера — «истощённая линия».
+     * Sample quality. A weakened and immobilized organism gives up material more willingly,
+     * a baby gives almost nothing, and a mob from a spawner is a "depleted line".
      */
     public static float quality(LivingEntity target, float bonus) {
         float quality = 50.0F + bonus;
@@ -143,7 +143,7 @@ public class SyringeItem extends Item {
         return Math.max(5.0F, Math.min(100.0F, quality));
     }
 
-    /** Спит, сидит в лодке или верхом, на поводке или сильно замедлен — то есть не вырывается. */
+    /** Sleeping, sitting in a boat or riding, on a leash or heavily slowed — i.e. not struggling. */
     private static boolean restrained(LivingEntity target) {
         if (target.isSleeping() || target.isPassenger() || (target instanceof Mob mob && mob.isLeashed())) {
             return true;

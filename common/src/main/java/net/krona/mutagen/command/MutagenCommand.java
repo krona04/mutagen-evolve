@@ -33,8 +33,8 @@ import net.minecraft.server.level.ServerPlayer;
 import java.util.Map;
 
 /**
- * Отладочные команды прототипа: посмотреть состояние, ввести дозу, выставить прогресс.
- * Нужны, потому что честный путь до пятой стадии занимает игровые дни.
+ * Prototype debug commands: view the state, inject a dose, set progress.
+ * Needed because the honest path to the fifth stage takes in-game days.
  */
 public final class MutagenCommand {
     private static final SuggestionProvider<CommandSourceStack> STRAIN_SUGGESTIONS =
@@ -178,7 +178,7 @@ public final class MutagenCommand {
         if (strain == null) {
             return 0;
         }
-        // Отладочная доза не упирается в изученность: ей нужно проверять трансформацию, а не науку.
+        // A debug dose isn't capped by research: it is for testing the transformation, not the science.
         Mutation.dose(player, strain.id(), quality, GeneData.NO_LIMIT);
         return 1;
     }
@@ -235,7 +235,7 @@ public final class MutagenCommand {
     private static Strain strainArgument(CommandContext<CommandSourceStack> context) {
         ResourceLocation id = ResourceLocationArgument.getId(context, "strain");
         Strain strain = Strains.get(id);
-        // Короткая запись: /mutagen set zombie 50 вместо mutagen:zombie.
+        // Short form: /mutagen set zombie 50 instead of mutagen:zombie.
         if (strain == null && id.getNamespace().equals(ResourceLocation.DEFAULT_NAMESPACE)) {
             strain = Strains.get(Mutagen.id(id.getPath()));
         }

@@ -16,8 +16,8 @@ import net.minecraft.util.FastColor;
 import net.minecraft.util.Mth;
 
 /**
- * Индикатор мутации: стадия, прогресс и запас усвоения.
- * Игрок должен понимать, что с ним происходит, не открывая команд.
+ * Mutation indicator: stage, progress and absorption reserve.
+ * The player should understand what is happening to them without opening commands.
  */
 @Environment(EnvType.CLIENT)
 public final class MutagenHud {
@@ -64,7 +64,7 @@ public final class MutagenHud {
         int progressWidth = Mth.ceil(BAR_WIDTH * gene.progress() / 100.0F);
         graphics.fill(x, barY, x + progressWidth, barY + BAR_HEIGHT, 0xFF000000 | strain.color());
 
-        // Запас усвоения: то, что тело ещё не переработало.
+        // Absorption reserve: what the body hasn't processed yet.
         int pendingWidth = Mth.ceil(BAR_WIDTH * Math.min(100.0F, gene.progress() + gene.pending()) / 100.0F);
         if (pendingWidth > progressWidth) {
             graphics.fill(x + progressWidth, barY, x + pendingWidth, barY + BAR_HEIGHT,

@@ -24,19 +24,19 @@ import net.minecraft.resources.ResourceLocation;
 import org.joml.Vector3f;
 
 /**
- * Поверхность существа на превращающемся теле.
+ * The creature's surface on a transforming body.
  * <p>
- * Форму тела меняет {@link BodyMorph}: кость игрока сама становится частью существа. Здесь на ту же
- * форму ложится шкура существа — его настоящая часть модели, вписанная ровно в коробку, которую сейчас
- * занимает кость, и лишь на волос снаружи. Шкура проступает островками по мере заражения кости
- * ({@link InfectionTextures#part}), а к концу превращения закрывает кость целиком. Части, которых
- * у человека нет, вырастают из тела на своём месте.
+ * The body shape is changed by {@link BodyMorph}: the player's bone itself becomes a part of the creature. Here the
+ * creature's hide is laid onto the same shape — its actual model part, fitted exactly into the box the bone
+ * currently occupies, and only a hair outside it. The hide shows through in islands as the bone becomes infected
+ * ({@link InfectionTextures#part}), and by the end of the transformation covers the bone entirely. Parts that
+ * humans don't have grow out of the body in their own place.
  */
 @Environment(EnvType.CLIENT)
 public final class HybridRenderer {
-    /** Шкура чуть снаружи кости, чтобы не мерцать в одной плоскости со скином. */
+    /** The hide sits slightly outside the bone so it doesn't z-fight with the skin. */
     private static final float SURFACE = 1.03F;
-    /** Пока заражение кости совсем свежее, шкуры на ней ещё нет. */
+    /** While the bone's infection is very fresh, there is no hide on it yet. */
     private static final float MIN_PHASE = 0.02F;
 
     private HybridRenderer() {
@@ -47,7 +47,7 @@ public final class HybridRenderer {
         return MutagenConfig.get().hybridRender && stage.atLeast(Stage.MANIFESTATION) && !stage.atLeast(Stage.FULL);
     }
 
-    /** Третье лицо: шкура на всех перестроенных костях и выросшие части. */
+    /** Third person: hide on all restructured bones, plus grown parts. */
     public static void renderBody(PlayerModel<?> model, AbstractClientPlayer player, MutagenData.Gene gene,
                                   Strain strain, PoseStack pose, MultiBufferSource buffer, int light) {
         BodyMorph.Frame frame = BodyMorph.frame(player);
@@ -81,7 +81,7 @@ public final class HybridRenderer {
         }
     }
 
-    /** Первое лицо: шкура существа на руке, которая сейчас превращается. */
+    /** First person: the creature's hide on the arm that is transforming right now. */
     public static void renderArm(AbstractClientPlayer player, ModelPart arm, boolean right, PoseStack pose,
                                  MultiBufferSource buffer, int light) {
         MutagenData.Gene gene = MutagenPlayer.of(player).primary();

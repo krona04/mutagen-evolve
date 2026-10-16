@@ -25,7 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Приём серверных пакетов на клиенте.
+ * Handling of server packets on the client.
  */
 @Environment(EnvType.CLIENT)
 public final class MutagenClientHooks {
@@ -47,11 +47,11 @@ public final class MutagenClientHooks {
                 Stage stageBefore = before == null ? Stage.NONE : before.stage();
                 data.applySnapshot(payload.genes());
                 MutagenData.Gene after = data.primary();
-                // Стадия выросла — тело выкручивает. Видят все, кто смотрит, а не только сам носитель.
+                // The stage has increased — the body twists. Everyone watching sees it, not just the host.
                 if (after != null && after.stage().ordinal() > stageBefore.ordinal() && stageBefore != Stage.NONE) {
                     BodyMotion.startConvulsion(player);
                 }
-                // Хитбокс и глаза считаются из прогресса: клиент пересчитывает их сам, как и сервер.
+                // The hitbox and eyes are computed from progress: the client recalculates them itself, just like the server.
                 Mutation.refreshDimensions(player);
             }
         });
@@ -69,8 +69,8 @@ public final class MutagenClientHooks {
 
     public static void handleStrains(MutagenNetwork.StrainsPayload payload, NetworkManager.PacketContext context) {
         context.queue(() -> {
-            // В одиночной игре сервер живёт в том же процессе и уже держит этот набор:
-            // подменять его копией незачем.
+            // In singleplayer the server lives in the same process and already holds this set:
+            // there's no point replacing it with a copy.
             if (Minecraft.getInstance().hasSingleplayerServer()) {
                 return;
             }

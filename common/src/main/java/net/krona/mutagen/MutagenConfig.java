@@ -9,8 +9,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 /**
- * Конфиг прототипа: то немногое, что уже имеет смысл крутить.
- * Полный набор настроек из дизайн-документа приходит вместе с механиками, которые он описывает.
+ * Prototype config: the few things that already make sense to tweak.
+ * The full set of settings from the design document arrives together with the mechanics it describes.
  */
 public final class MutagenConfig {
     public static final String SCOPE_WORLD = "world";
@@ -19,33 +19,33 @@ public final class MutagenConfig {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static MutagenConfig instance;
 
-    /** Множитель скорости усвоения и отката. */
+    /** Multiplier for absorption and decay speed. */
     public float transformationSpeed = 1.0F;
-    /** Сколько прогресса даёт одна доза сыворотки со стопроцентной чистотой. */
+    /** How much progress one serum dose of 100% purity gives. */
     public float doseStrength = 20.0F;
-    /** Ограничения человечности: отказ носить броню и прочая цена. */
+    /** Humanity restrictions: refusing to wear armor and other costs. */
     public boolean humanityPenalties = true;
-    /** Горение на солнце у нежити. */
+    /** Undead burning in the sun. */
     public boolean sunlightBurn = true;
-    /** Индикатор мутации в интерфейсе. */
+    /** Mutation indicator in the HUD. */
     public boolean hud = true;
-    /** Полная подмена модели на пятой стадии. Выключите, если конфликтует с модом на скины. */
+    /** Full model replacement at the fifth stage. Disable if it conflicts with a skin mod. */
     public boolean fullFormRender = true;
-    /** Сколько генов может держать тело. Химеры приходят в 0.5. */
+    /** How many genes the body can hold. Chimeras arrive in 0.5. */
     public int maxGenes = 1;
-    /** Чья изученность: {@code "world"} — общая на мир, {@code "player"} — у каждого своя. */
+    /** Whose research: {@code "world"} — shared across the world, {@code "player"} — each their own. */
     public String knowledgeScope = SCOPE_WORLD;
-    /** Множитель прироста изученности за прогон секвенатора. */
+    /** Multiplier for research gained per sequencer run. */
     public float researchSpeed = 1.0F;
-    /** С какой чистоты генома синтезатор выдаёт две ампулы вместо одной. 101 — никогда. */
+    /** From which genome purity the synthesizer yields two ampoules instead of one. 101 — never. */
     public float doubleSerumPurity = 85.0F;
-    /** Гибридные стадии III–IV: части существа на теле игрока. Выключите, если конфликтует с модом на модели. */
+    /** Hybrid stages III–IV: creature parts on the player's body. Disable if it conflicts with a model mod. */
     public boolean hybridRender = true;
-    /** Пропорции и осанка тела меняются вместе с заражением. */
+    /** Body proportions and posture change along with the infection. */
     public boolean bodyMorph = true;
-    /** Судороги на переходе стадий и непроизвольные подёргивания со стадии III. */
+    /** Convulsions on stage transitions and involuntary twitches from stage III. */
     public boolean bodyMotion = true;
-    /** Если установлен Pehkui, тело меняется через него: хитбокс, глаза, дальность рук и инерция. */
+    /** If Pehkui is installed, the body changes through it: hitbox, eyes, reach and inertia. */
     public boolean pehkuiIntegration = true;
 
     public static MutagenConfig get() {
@@ -77,7 +77,7 @@ public final class MutagenConfig {
             Files.createDirectories(path.getParent());
             Files.writeString(path, GSON.toJson(get()));
         } catch (IOException ignored) {
-            // конфиг не критичен: работаем на значениях по умолчанию
+            // config is not critical: run on default values
         }
     }
 

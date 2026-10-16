@@ -24,8 +24,8 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Общее поведение лабораторных машин: поворот, индикатор работы, открытие экрана и выброс
- * содержимого при разрушении.
+ * Shared behaviour of lab machines: facing, the working indicator, opening the screen and dropping
+ * the contents when broken.
  */
 public abstract class MachineBlock extends BaseEntityBlock {
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;

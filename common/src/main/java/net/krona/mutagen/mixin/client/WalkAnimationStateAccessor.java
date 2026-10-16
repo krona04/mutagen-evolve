@@ -5,8 +5,8 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
 /**
- * Фаза шага хранится приватно, а полной форме её нужно копировать с игрока один в один:
- * иначе ноги существа шагают не в такт и в разном темпе при разном FPS.
+ * The walk phase is stored privately, and the full form needs to copy it from the player exactly:
+ * otherwise the creature's legs step out of sync and at a different pace at different FPS.
  */
 @Mixin(WalkAnimationState.class)
 public interface WalkAnimationStateAccessor {

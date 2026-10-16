@@ -23,14 +23,14 @@ import org.lwjgl.glfw.GLFW;
 
 @Environment(EnvType.CLIENT)
 public final class MutagenClient {
-    /** Гено-древо: каталог встреченных видов. По умолчанию G — в ванилле эта клавиша свободна. */
+    /** Gene tree: catalog of encountered species. G by default — that key is free in vanilla. */
     public static final KeyMapping GENE_TREE_KEY = new KeyMapping("key.mutagen.gene_tree",
             InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_G, "key.categories.mutagen");
 
     private MutagenClient() {
     }
 
-    /** Интерфейс, клавиши и клиентский тик. Безопасно вызывать в любой момент запуска. */
+    /** HUD, keys and client tick. Safe to call at any point during startup. */
     public static void init() {
         KeyMappingRegistry.register(GENE_TREE_KEY);
         ClientGuiEvent.RENDER_HUD.register(MutagenHud::render);
@@ -53,11 +53,11 @@ public final class MutagenClient {
     }
 
     /**
-     * Экраны машин.
+     * Machine screens.
      * <p>
-     * Вызывать только там, где загрузчик ещё принимает регистрацию экранов: на Fabric это
-     * клиентская точка входа, на NeoForge — собственное событие {@code RegisterMenuScreensEvent},
-     * поэтому там регистрация идёт мимо этого метода.
+     * Call only where the loader still accepts screen registration: on Fabric this is
+     * the client entrypoint, on NeoForge its own {@code RegisterMenuScreensEvent},
+     * so registration there bypasses this method.
      */
     public static void registerScreens() {
         MenuRegistry.registerScreenFactory(MutagenBlocks.CENTRIFUGE_MENU.get(), CentrifugeScreen::new);

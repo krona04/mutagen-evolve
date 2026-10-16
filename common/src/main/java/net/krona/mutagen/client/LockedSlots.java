@@ -11,8 +11,8 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.inventory.TransientCraftingContainer;
 
 /**
- * Запертые ячейки видно сразу: они затянуты тёмной плёнкой и на поясе, и в любом окне с инвентарём.
- * Выбор ячейки пояса колесом тоже не заходит в запертые.
+ * Locked slots are visible at once: they are covered with a dark film both on the hotbar and in any inventory window.
+ * Scrolling the hotbar with the mouse wheel also skips locked slots.
  */
 @Environment(EnvType.CLIENT)
 public final class LockedSlots {
@@ -45,8 +45,8 @@ public final class LockedSlots {
         int left = graphics.guiWidth() / 2 - 91;
         int top = graphics.guiHeight() - 22;
         graphics.pose().pushPose();
-        // Интерфейс в 1.21 рисуется слоями, и каждый следующий слой поднимается по глубине; хук HUD может
-        // прийти раньше слоя пояса, поэтому плёнка поднимается заведомо выше него.
+        // In 1.21 the GUI is drawn in layers, and each next layer goes up in depth; the HUD hook may
+        // arrive before the hotbar layer, so the film is raised well above it.
         graphics.pose().translate(0.0F, 0.0F, HUD_Z);
         for (int i = active.hotbar(); i < Inventory.getSelectionSize(); i++) {
             int x = left + 3 + i * 20;
@@ -79,7 +79,7 @@ public final class LockedSlots {
 
     private static void shade(GuiGraphics graphics, int x, int y) {
         graphics.fill(x, y, x + 16, y + 16, SHADE);
-        // Косая черта: запертая ячейка должна читаться, даже если в ней ничего не лежит.
+        // A diagonal stroke: a locked slot must be readable even when it is empty.
         for (int i = 2; i < 14; i++) {
             graphics.fill(x + i, y + 15 - i, x + i + 1, y + 16 - i, MARK);
         }

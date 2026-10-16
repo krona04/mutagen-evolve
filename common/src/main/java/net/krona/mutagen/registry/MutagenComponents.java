@@ -11,7 +11,7 @@ public final class MutagenComponents {
     public static final DeferredRegister<DataComponentType<?>> COMPONENTS =
             DeferredRegister.create(Mutagen.MOD_ID, Registries.DATA_COMPONENT_TYPE);
 
-    /** Какой штамм и какой чистоты лежит в пробирке. */
+    /** Which strain of what purity is in the vial. */
     public static final RegistrySupplier<DataComponentType<GeneData>> GENE = COMPONENTS.register("gene",
             () -> DataComponentType.<GeneData>builder()
                     .persistent(GeneData.CODEC)

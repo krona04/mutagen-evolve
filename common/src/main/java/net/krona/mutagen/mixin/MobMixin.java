@@ -13,8 +13,8 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
- * Происхождение моба: из спавнера — значит, «истощённая линия», и образец от него хуже.
- * Метка — обычный тег сущности, поэтому она переживает перезагрузку чанка без своего формата данных.
+ * Mob origin: from a spawner means a "depleted line", and its sample is worse.
+ * The mark is a regular entity tag, so it survives chunk reloads without its own data format.
  */
 @Mixin(Mob.class)
 public abstract class MobMixin {

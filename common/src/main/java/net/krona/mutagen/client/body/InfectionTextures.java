@@ -27,39 +27,39 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Текстуры заражения, которые мод рисует сам для каждого носителя.
+ * Infection textures the mod draws itself for each host.
  * <p>
- * <b>Кожа.</b> Поверх скина игрока ложится текстура в его же раскладке: заражённые пиксели непрозрачны,
- * остальные пусты. Каждая кость заражается в своё окно прогресса ({@link Infection}), пятна растут по
- * личному рисунку игрока ({@link InfectionMask}), а на границе пятна кожа темнее — воспалённый край.
- * Цвет пятна берётся из текстуры самого существа, если её раскладка совпадает с человеческой, иначе —
- * из цвета штамма; пустоты в текстуре существа становятся тёмными полостями. Пятна ложатся только на
- * основной слой: слой одежды с превращающейся кости спадает.
+ * <b>Skin.</b> A texture in the same layout is laid over the player's skin: infected pixels are opaque,
+ * the rest are empty. Each bone becomes infected in its own progress window ({@link Infection}), the blotches grow along
+ * the player's personal pattern ({@link InfectionMask}), and at the blotch border the skin is darker — an inflamed edge.
+ * The blotch color comes from the creature's own texture if its layout matches the human one, otherwise
+ * from the strain color; empty areas in the creature's texture become dark cavities. Blotches are applied only to
+ * the base layer: the clothing layer falls off a transforming bone.
  * <p>
- * <b>Части существа.</b> Текстура существа проявляется так же — островками, начиная с малого, —
- * поэтому часть прорастает сквозь кожу, а не проступает прозрачной плёнкой.
+ * <b>Creature parts.</b> The creature's texture appears the same way — in islands, starting small —
+ * so the part grows through the skin instead of showing through as a translucent film.
  * <p>
- * Текстуры пересобираются только когда прогресс сдвинулся на полпроцента, и выгружаются, если
- * носитель давно не рисовался.
+ * Textures are rebuilt only when progress has moved by half a percent, and are unloaded if
+ * the host hasn't been rendered for a long time.
  */
 @Environment(EnvType.CLIENT)
 public final class InfectionTextures {
     private static final Logger LOGGER = LogUtils.getLogger();
-    /** Сколько скина заражение может занять до полной формы. */
+    /** How much of the skin the infection can cover before the full form. */
     private static final float SKIN_CAP = 0.86F;
-    /** Шкура существа появляется сразу редкими островками и к концу превращения кости закрывает её всю. */
+    /** The creature's hide appears right away as sparse islands and covers the whole bone by the end of its transformation. */
     private static final float PART_BASE = 0.04F;
-    /** Ширина воспалённого края пятна в единицах маски. */
+    /** Width of the blotch's inflamed edge, in mask units. */
     private static final float RIM = 0.07F;
     private static final long UNUSED_MS = 30_000L;
-    /** Полость в теле существа — например, между рёбрами скелета. */
+    /** A cavity in the creature's body — for example, between a skeleton's ribs. */
     private static final int CAVITY = 0x1C1A1A;
 
     private static final Map<String, Entry> ENTRIES = new HashMap<>();
     private static final Map<ResourceLocation, Optional<NativeImage>> SOURCES = new HashMap<>();
     private static long lastCleanup;
 
-    /** Раскладка основного слоя скина игрока 64×64 и где та же часть лежит в текстуре существа. */
+    /** Layout of the player's 64×64 base skin layer and where the same part lies in the creature's texture. */
     private record Region(Strain.Bone bone, int x0, int y0, int x1, int y1, int sampleDx, int sampleDy) {
     }
 
@@ -68,7 +68,7 @@ public final class InfectionTextures {
             new Region(Strain.Bone.BODY, 16, 16, 40, 32, 0, 0),
             new Region(Strain.Bone.RIGHT_ARM, 40, 16, 56, 32, 0, 0),
             new Region(Strain.Bone.RIGHT_LEG, 0, 16, 16, 32, 0, 0),
-            // Левые конечности в текстурах мобов старой раскладки нарисованы на месте правых.
+            // In old-layout mob textures the left limbs are drawn in place of the right ones.
             new Region(Strain.Bone.LEFT_ARM, 32, 48, 48, 64, 8, -32),
             new Region(Strain.Bone.LEFT_LEG, 16, 48, 32, 64, -16, -32));
 
@@ -88,7 +88,7 @@ public final class InfectionTextures {
     private InfectionTextures() {
     }
 
-    /** Заражённая кожа игрока или null, если заражение ещё не началось. */
+    /** The player's infected skin, or null if the infection hasn't started yet. */
     @Nullable
     public static ResourceLocation skin(AbstractClientPlayer player, Strain strain, MutagenData.Gene gene) {
         if (gene.progress() < Infection.START) {
@@ -106,8 +106,8 @@ public final class InfectionTextures {
     }
 
     /**
-     * Шкура части существа на превращающейся кости: островками по фазе кости, целиком — к её концу.
-     * Null, если превращение кости ещё не началось.
+     * The creature part's hide on a transforming bone: in islands by the bone's phase, fully by its end.
+     * Null if the bone's transformation hasn't started yet.
      */
     @Nullable
     public static ResourceLocation part(AbstractClientPlayer player, Strain strain, int index, float phase) {
@@ -140,8 +140,8 @@ public final class InfectionTextures {
     }
 
     /**
-     * Столбец широкой (4 пикселя) развёртки руки для столбца узкой (3 пикселя). Боковые грани у обеих
-     * по 4 пикселя, а передняя, задняя, верх и низ у узкой руки на пиксель уже — они растягиваются.
+     * Column of the wide (4-pixel) arm unwrap for a column of the slim (3-pixel) one. The side faces of both
+     * are 4 pixels, while the front, back, top and bottom of the slim arm are a pixel narrower — they get stretched.
      */
     private static int wideArmX(int x, int y, Region region) {
         int lx = x - region.x0();
@@ -149,20 +149,20 @@ public final class InfectionTextures {
         int wide;
         if (ly < 4) {
             if (lx >= 4 && lx < 7) {
-                wide = 4 + (lx - 4) * 4 / 3;          // верх
+                wide = 4 + (lx - 4) * 4 / 3;          // top
             } else if (lx >= 7 && lx < 10) {
-                wide = 8 + (lx - 7) * 4 / 3;          // низ
+                wide = 8 + (lx - 7) * 4 / 3;          // bottom
             } else {
                 wide = lx;
             }
         } else if (lx < 4) {
-            wide = lx;                               // внешний бок
+            wide = lx;                               // outer side
         } else if (lx < 7) {
-            wide = 4 + (lx - 4) * 4 / 3;              // перед
+            wide = 4 + (lx - 4) * 4 / 3;              // front
         } else if (lx < 11) {
-            wide = lx + 1;                           // внутренний бок
+            wide = lx + 1;                           // inner side
         } else if (lx < 14) {
-            wide = 12 + (lx - 11) * 4 / 3;            // спина
+            wide = 12 + (lx - 11) * 4 / 3;            // back
         } else {
             wide = lx;
         }
@@ -184,8 +184,8 @@ public final class InfectionTextures {
             if (threshold <= 0.0F) {
                 continue;
             }
-            // Полости — только на туловище, где у существа рёбра и просветы. Конечности у многих существ тоньше
-            // человеческих, и пустое место вокруг них в текстуре — не полость, а просто «ничего».
+            // Cavities only on the torso, where the creature has ribs and gaps. Many creatures' limbs are thinner than
+            // human ones, and the empty space around them in the texture is not a cavity but simply "nothing".
             boolean used = region.bone() == Strain.Bone.BODY && regionUsed(mob, region);
             for (int y = region.y0(); y < region.y1(); y++) {
                 for (int x = region.x0(); x < region.x1(); x++) {
@@ -193,8 +193,8 @@ public final class InfectionTextures {
                     if (value >= threshold) {
                         continue;
                     }
-                    // У узких рук (Алекс) развёртка другая: грани руки шириной 3, а не 4 пикселя. Плоть существа
-                    // берётся из той же грани его широкой руки, иначе на руке Алекс швы съезжали бы.
+                    // Slim arms (Alex) have a different unwrap: arm faces are 3 pixels wide, not 4. The creature's flesh
+                    // is taken from the same face of its wide arm, otherwise the seams on Alex's arm would shift.
                     int sampleX = slim && isArm(region) ? wideArmX(x, y, region) : x;
                     int color = fleshColor(mob, sampleX + region.sampleDx(), y + region.sampleDy(), strain.color(),
                             used);
@@ -203,8 +203,8 @@ public final class InfectionTextures {
                         color = inflame(color, strain.color());
                     }
                     int abgr = FastColor.ABGR32.color(255, color & 0xFF, (color >> 8) & 0xFF, (color >> 16) & 0xFF);
-                    // Только основной слой кожи: слой одежды спадает с кости, когда она превращается
-                    // (BodyMorph), а рисовать пятна дважды — значит получить двойную кожу.
+                    // Base skin layer only: the clothing layer falls off a bone when it transforms
+                    // (BodyMorph), and drawing the blotches twice would mean getting a double skin.
                     image.setPixelRGBA(x, y, abgr);
                 }
             }
@@ -237,9 +237,9 @@ public final class InfectionTextures {
     }
 
     /**
-     * Цвет плоти существа в этой точке скина: из его текстуры, если там что-то нарисовано. Если эта часть
-     * текстуры у существа есть, но в точке пусто — как между рёбрами скелета, — это полость, и она тёмная.
-     * Если части в текстуре нет вовсе (руки крипера), берётся цвет штамма.
+     * The creature's flesh color at this skin point: from its texture, if something is drawn there. If the creature's texture
+     * has this part but the point is empty — like between a skeleton's ribs — it is a cavity, and it is dark.
+     * If the texture has no such part at all (a creeper's arms), the strain color is used.
      */
     private static int fleshColor(@Nullable NativeImage mob, int x, int y, int fallback, boolean regionUsed) {
         if (mob != null) {
@@ -260,7 +260,7 @@ public final class InfectionTextures {
         return fallback;
     }
 
-    /** Есть ли в текстуре существа хоть что-то на месте этой части скина. */
+    /** Whether the creature's texture has anything at all in place of this skin part. */
     private static boolean regionUsed(@Nullable NativeImage mob, Region region) {
         if (mob == null) {
             return false;
@@ -279,7 +279,7 @@ public final class InfectionTextures {
         return false;
     }
 
-    /** Край пятна: темнее и ближе к цвету штамма, как воспалённая кожа вокруг раны. */
+    /** Blotch edge: darker and closer to the strain color, like inflamed skin around a wound. */
     private static int inflame(int rgb, int strainColor) {
         int dark = shade(strainColor, 0.45F);
         return mix(rgb, dark, 0.6F);
@@ -327,7 +327,7 @@ public final class InfectionTextures {
         }).orElse(null);
     }
 
-    /** Раз в несколько секунд: выгрузить текстуры носителей, которых давно не видно. */
+    /** Every few seconds: unload textures of hosts that haven't been seen for a long time. */
     public static void tick() {
         long now = System.currentTimeMillis();
         if (now - lastCleanup < 5_000L) {
@@ -344,7 +344,7 @@ public final class InfectionTextures {
         }
     }
 
-    /** Ресурспак сменился: текстуры существ могли стать другими. */
+    /** The resource pack changed: creature textures may have become different. */
     public static void reset() {
         for (Entry entry : ENTRIES.values()) {
             entry.key = Integer.MIN_VALUE;

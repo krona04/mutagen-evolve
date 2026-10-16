@@ -5,16 +5,16 @@ import net.krona.mutagen.strain.Strain;
 import net.minecraft.network.chat.Component;
 
 /**
- * Пороги изученности вида и то, что каждый из них открывает. Числа взяты из дизайн-документа.
+ * Species research thresholds and what each of them unlocks. The numbers come from the design document.
  */
 public final class Research {
-    /** Виден список генов, доступна слабая сыворотка. */
+    /** The gene list is visible, a weak serum is available. */
     public static final float GENES = 25.0F;
-    /** Полная сыворотка. */
+    /** Full serum. */
     public static final float SERUM = 50.0F;
-    /** Сыворотка ведёт до полной формы. */
+    /** The serum leads to the full form. */
     public static final float FULL_FORM = 75.0F;
-    /** Штамм держится без стабилизатора. */
+    /** The strain holds without a stabilizer. */
     public static final float MASTERED = 100.0F;
 
     public static final float[] THRESHOLDS = {GENES, SERUM, FULL_FORM, MASTERED};
@@ -23,8 +23,8 @@ public final class Research {
     }
 
     /**
-     * До какого прогресса способна довести сыворотка, синтезированная при такой изученности.
-     * Ноль — синтез ещё невозможен.
+     * The progress a serum synthesized at this research level can bring the host to.
+     * Zero — synthesis is not possible yet.
      */
     public static int serumLimit(float research) {
         if (research >= FULL_FORM) {
@@ -48,8 +48,8 @@ public final class Research {
     }
 
     /**
-     * Сколько процентов изученности даёт один прогон секвенатора. Чистый образец даёт больше,
-     * сложный вид — меньше: крипер изучается в полтора раза дольше зомби.
+     * How many percent of research one sequencer run yields. A pure sample yields more,
+     * a complex species less: a creeper takes one and a half times longer to research than a zombie.
      */
     public static float gain(Strain strain, float quality) {
         float base = 4.0F + quality * 0.12F;
@@ -57,7 +57,7 @@ public final class Research {
         return base / difficulty * MutagenConfig.get().researchSpeed;
     }
 
-    /** Следующий порог после текущей изученности или -1, если всё открыто. */
+    /** The next threshold after the current research, or -1 if everything is unlocked. */
     public static float nextThreshold(float research) {
         for (float threshold : THRESHOLDS) {
             if (research < threshold) {
@@ -67,12 +67,12 @@ public final class Research {
         return -1.0F;
     }
 
-    /** Что открывает порог — для секвенатора, гено-древа и сообщений. */
+    /** What a threshold unlocks — for the sequencer, the gene tree and messages. */
     public static Component unlockText(float threshold) {
         return Component.translatable("mutagen.research.unlock." + (int) threshold);
     }
 
-    /** Пересечён ли порог при росте изученности с {@code before} до {@code after}. */
+    /** Whether a threshold is crossed when research grows from {@code before} to {@code after}. */
     public static float crossed(float before, float after) {
         float result = -1.0F;
         for (float threshold : THRESHOLDS) {

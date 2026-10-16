@@ -14,14 +14,14 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Тело, которое не до конца слушается хозяина.
+ * A body that doesn't fully obey its owner.
  * <p>
- * <b>Судороги.</b> Переход на новую стадию — это ломка: пару секунд тело выкручивает, голова дёргается,
- * руки ходят ходуном, и дрожь затухает. Видят это все, кто смотрит на носителя, а не только он сам.
+ * <b>Convulsions.</b> Moving to a new stage is a breaking: for a couple of seconds the body twists, the head jerks,
+ * the arms shake, and the tremor fades. Everyone looking at the host sees it, not just the host.
  * <p>
- * <b>Подёргивания.</b> Со стадии III раз в несколько секунд одна кость коротко и резко дёргается
- * сама по себе — на IV чаще и сильнее. Расписание берётся из UUID игрока, поэтому у каждого носителя
- * свой ритм, одинаковый на всех клиентах.
+ * <b>Twitches.</b> From stage III, every few seconds one bone twitches briefly and sharply
+ * on its own — more often and harder at IV. The schedule comes from the player's UUID, so each host
+ * has their own rhythm, identical on all clients.
  */
 @Environment(EnvType.CLIENT)
 public final class BodyMotion {
@@ -31,7 +31,7 @@ public final class BodyMotion {
     private BodyMotion() {
     }
 
-    /** Стадия выросла: запустить судороги у этого игрока. */
+    /** The stage has increased: start convulsions for this player. */
     public static void startConvulsion(Player player) {
         CONVULSIONS.put(player.getId(), gameTime());
     }
@@ -70,7 +70,7 @@ public final class BodyMotion {
     }
 
     /**
-     * Одно подёргивание за окно в {@code period} тиков: момент и кость выбираются хешем от UUID и номера окна.
+     * One twitch per window of {@code period} ticks: the moment and the bone are chosen by a hash of the UUID and the window index.
      */
     private static void twitch(PlayerModel<?> model, Player player, Stage stage) {
         if (!stage.atLeast(Stage.MUTATION)) {
@@ -87,7 +87,7 @@ public final class BodyMotion {
         if (inside < 0 || inside >= length) {
             return;
         }
-        // Резкий рывок и спад: синус по полупериоду.
+        // A sharp jerk and release: a sine over a half period.
         float amount = Mth.sin((inside / (float) length) * Mth.PI) * (strong ? 0.30F : 0.18F);
         float sign = (hash & 1L) == 0 ? 1.0F : -1.0F;
         switch ((int) Math.floorMod(hash >>> 8, 3)) {

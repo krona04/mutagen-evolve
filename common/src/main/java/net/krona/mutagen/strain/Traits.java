@@ -38,11 +38,11 @@ import java.util.Optional;
 import java.util.function.Function;
 
 /**
- * Типы черт, из которых собираются штаммы в датапаках. Каждая сильная сторона здесь соседствует
- * со своей ценой: правило мода — способность и слабость приходят в одной версии.
+ * Trait types that datapack strains are built from. Every strength here sits next to
+ * its cost: the mod's rule is that an ability and a weakness arrive in the same version.
  * <p>
- * Общие поля у всех типов: {@code "from_stage"} — стадия, с которой черта работает, и
- * необязательное {@code "description"} — ключ перевода, если стандартное описание не подходит.
+ * Fields shared by all types: {@code "from_stage"} — the stage from which the trait takes effect, and
+ * the optional {@code "description"} — a translation key, if the default description doesn't fit.
  */
 public final class Traits {
     public static final TraitType<Attr> ATTRIBUTE = TraitType.register("attribute", Attr.CODEC);
@@ -66,7 +66,7 @@ public final class Traits {
     public static final TraitType<Diet> DIET = TraitType.register("diet", Diet.CODEC);
     public static final TraitType<NoEating> NO_EATING = TraitType.register("no_eating", NoEating.CODEC);
 
-    /** Любая черта: поле {@code "type"} выбирает формат остальных полей. */
+    /** Any trait: the {@code "type"} field selects the format of the other fields. */
     public static final Codec<Trait> CODEC = TraitType.CODEC.dispatch("type", Trait::type, TraitType::codec);
 
     private Traits() {
@@ -85,7 +85,7 @@ public final class Traits {
         return key.<Component>map(Component::translatable).orElse(fallback);
     }
 
-    /** Постоянный модификатор атрибута. */
+    /** Permanent attribute modifier. */
     public record Attr(Stage minStage, Holder<Attribute> attribute, double amount,
                        AttributeModifier.Operation operation, Optional<String> descriptionKey) implements Trait {
         static final MapCodec<Attr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
@@ -113,7 +113,7 @@ public final class Traits {
 
         @Override
         public boolean weakness() {
-            // Атрибут сам знает, хорошо ли ему расти: меньше здоровья — плохо, меньше урона от падения — хорошо.
+            // The attribute itself knows whether growing is good for it: less health is bad, less fall damage is good.
             return attribute.value().getStyle(amount > 0.0D) == ChatFormatting.RED;
         }
 
@@ -123,7 +123,7 @@ public final class Traits {
         }
     }
 
-    /** Горение на солнце: цена всей нежити. */
+    /** Burning in the sun: the cost for all undead. */
     public record SunBurn(Stage minStage) implements Trait {
         static final MapCodec<SunBurn> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
                 stage(SunBurn::minStage)
@@ -164,7 +164,7 @@ public final class Traits {
         }
     }
 
-    /** Регенерация в темноте. */
+    /** Regeneration in darkness. */
     public record DarknessRegeneration(Stage minStage, int amplifier, int maxLight) implements Trait {
         static final MapCodec<DarknessRegeneration> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
                 stage(DarknessRegeneration::minStage),
@@ -192,7 +192,7 @@ public final class Traits {
         }
     }
 
-    /** Иммунитет к набору эффектов. */
+    /** Immunity to a set of effects. */
     public record EffectImmunity(Stage minStage, List<Holder<MobEffect>> effects,
                                  Optional<String> descriptionKey) implements Trait {
         static final MapCodec<EffectImmunity> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
@@ -225,7 +225,7 @@ public final class Traits {
         }
     }
 
-    /** Множитель урона от определённого типа: иммунитеты и уязвимости. */
+    /** Damage multiplier for a specific type: immunities and vulnerabilities. */
     public record DamageFactor(Stage minStage, TagKey<DamageType> damageType, float factor,
                                Optional<String> descriptionKey) implements Trait {
         static final MapCodec<DamageFactor> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
@@ -257,7 +257,7 @@ public final class Traits {
         }
     }
 
-    /** Паника рядом с котами: цена крипера. */
+    /** Panic near cats: the creeper's cost. */
     public record CatFear(Stage minStage, double radius) implements Trait {
         static final MapCodec<CatFear> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
                 stage(CatFear::minStage),
@@ -292,7 +292,7 @@ public final class Traits {
         }
     }
 
-    /** На высоких стадиях тело больше не носит броню. */
+    /** At high stages the body no longer wears armor. */
     public record ArmorRejection(Stage minStage) implements Trait {
         static final MapCodec<ArmorRejection> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
                 stage(ArmorRejection::minStage)
@@ -339,7 +339,7 @@ public final class Traits {
         }
     }
 
-    /** Стрелы носителя бьют сильнее. Применяется при появлении стрелы в мире. */
+    /** The host's arrows hit harder. Applied when the arrow appears in the world. */
     public record ArrowPower(Stage minStage, double factor) implements Trait {
         static final MapCodec<ArrowPower> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
                 stage(ArrowPower::minStage),
@@ -362,9 +362,9 @@ public final class Traits {
         }
     }
 
-    // --- Тело без рук. Сами запреты проверяет Restrictions: черты только говорят, что действует. ---
+    // --- A body without hands. The bans themselves are checked by Restrictions: traits only say what applies. ---
 
-    /** Вторая рука пропадает: из неё ничего не удержать. */
+    /** The offhand disappears: nothing can be held in it. */
     public record NoOffhand(Stage minStage) implements Trait {
         static final MapCodec<NoOffhand> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
                 stage(NoOffhand::minStage)
@@ -386,7 +386,7 @@ public final class Traits {
         }
     }
 
-    /** До рюкзака не дотянуться, а на поясе остаётся {@code hotbar} ячеек. */
+    /** The backpack is out of reach, and {@code hotbar} slots remain on the hotbar. */
     public record InventoryLimit(Stage minStage, int hotbar) implements Trait {
         static final MapCodec<InventoryLimit> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
                 stage(InventoryLimit::minStage),
@@ -409,7 +409,7 @@ public final class Traits {
         }
     }
 
-    /** Инструменты и оружие держать нечем. Какие именно — тег предметов {@code mutagen:needs_hands}. */
+    /** There is nothing to hold tools and weapons with. Which ones exactly — the {@code mutagen:needs_hands} item tag. */
     public record NoTools(Stage minStage) implements Trait {
         static final MapCodec<NoTools> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
                 stage(NoTools::minStage)
@@ -432,8 +432,8 @@ public final class Traits {
     }
 
     /**
-     * Мелкая работа недоступна: станки из тега {@code stations} (по умолчанию {@code mutagen:needs_hands}),
-     * а с {@code grid} — и сетка крафта в инвентаре.
+     * Fine work is unavailable: workstations from the {@code stations} tag (by default {@code mutagen:needs_hands}),
+     * and with {@code grid} — the inventory crafting grid too.
      */
     public record NoCrafting(Stage minStage, TagKey<Block> stations, boolean grid,
                              Optional<String> descriptionKey) implements Trait {
@@ -461,7 +461,7 @@ public final class Traits {
         }
     }
 
-    /** Строить нечем: блоки не ставятся. */
+    /** Nothing to build with: blocks can't be placed. */
     public record NoBuilding(Stage minStage) implements Trait {
         static final MapCodec<NoBuilding> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
                 stage(NoBuilding::minStage)
@@ -483,7 +483,7 @@ public final class Traits {
         }
     }
 
-    /** Тело больше не отдыхает: в кровать не лечь. */
+    /** The body no longer rests: can't lie down in a bed. */
     public record NoSleep(Stage minStage) implements Trait {
         static final MapCodec<NoSleep> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
                 stage(NoSleep::minStage)
@@ -505,7 +505,7 @@ public final class Traits {
         }
     }
 
-    /** Тело принимает только еду из тега {@code foods}, остальное не лезет. */
+    /** The body accepts only food from the {@code foods} tag; the rest won't go down. */
     public record Diet(Stage minStage, TagKey<Item> foods, Optional<String> descriptionKey) implements Trait {
         static final MapCodec<Diet> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
                 stage(Diet::minStage),
@@ -531,8 +531,8 @@ public final class Traits {
     }
 
     /**
-     * Нечем переваривать: есть нельзя вовсе, а сытость застывает на {@code food_level}. Голодом не умереть,
-     * но и естественного лечения нет, если уровень ниже 18.
+     * Nothing to digest with: eating is impossible altogether, and hunger freezes at {@code food_level}. You can't starve to death,
+     * but there is no natural healing either if the level is below 18.
      */
     public record NoEating(Stage minStage, int foodLevel) implements Trait {
         static final MapCodec<NoEating> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(

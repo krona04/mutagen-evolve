@@ -22,12 +22,12 @@ import java.util.Set;
 import java.util.WeakHashMap;
 
 /**
- * План превращения для штамма: какая кость игрока в какую часть существа переходит, что у существа
- * вырастает сверх человеческого и какие кости втягиваются.
+ * Transformation plan for a strain: which player bone turns into which creature part, what the creature
+ * grows beyond the human body, and which bones retract.
  * <p>
- * Модель существа запекается из её собственного ванильного слоя, поэтому годится любой моб.
- * Если в штамме нет списка частей, кости сопоставляются по именам: {@code head}, {@code body},
- * {@code right_arm} и так далее — так устроены все человекоподобные мобы.
+ * The creature's model is baked from its own vanilla layer, so any mob works.
+ * If the strain has no list of parts, bones are matched by name: {@code head}, {@code body},
+ * {@code right_arm} and so on — that is how all humanoid mobs are built.
  */
 @Environment(EnvType.CLIENT)
 public final class MorphPlan {
@@ -35,7 +35,7 @@ public final class MorphPlan {
     private static final Map<String, Optional<ModelPart>> ROOTS = new HashMap<>();
     private static final Map<Strain, MorphPlan> PLANS = new WeakHashMap<>();
 
-    /** Кость игрока → часть существа, которой она становится. */
+    /** Player bone → the creature part it becomes. */
     public record Target(int index, Strain.Part part, ModelPart model, Box box, PartPose pose) {
     }
 
@@ -98,7 +98,7 @@ public final class MorphPlan {
         return absorbed.contains(bone);
     }
 
-    /** Часть по пути вида {@code "head"} или {@code "body/tail"}. */
+    /** Part by a path like {@code "head"} or {@code "body/tail"}. */
     @Nullable
     private static ModelPart find(ModelPart root, String path) {
         ModelPart current = root;
@@ -112,8 +112,8 @@ public final class MorphPlan {
     }
 
     /**
-     * Корень модели существа. Запекается один раз: геометрия слоёв задаётся кодом и не меняется
-     * при перезагрузке ресурсов. Если слоя нет, штамм меняет только кожу, но не форму.
+     * Root of the creature's model. Baked once: layer geometry is defined in code and doesn't change
+     * on resource reload. If there is no layer, the strain changes only the skin, not the shape.
      */
     @Nullable
     private static ModelPart root(Strain strain) {

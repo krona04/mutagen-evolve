@@ -32,17 +32,17 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Что тело носителя больше не может делать. Собирается из черт штамма на текущей стадии, поэтому
- * сервер и клиент считают одно и то же: клиент знает штаммы и прогресс так же, как сервер.
+ * What the host's body can no longer do. Built from the strain's traits at the current stage, so
+ * the server and the client compute the same thing: the client knows the strains and progress just like the server.
  * <p>
- * Правило дизайн-документа: ограничения никогда не молчаливы. Каждый отказ объясняется строкой над
- * хотбаром, а запертые ячейки инвентаря затемнены. Вещи из запертых ячеек никуда не деваются —
- * они вернутся к носителю вместе с руками.
+ * Design document rule: restrictions are never silent. Every refusal is explained by an action bar
+ * message, and locked inventory slots are dimmed. Items in locked slots don't go anywhere —
+ * they come back to the host together with the hands.
  */
 public final class Restrictions {
-    /** Станки, для которых нужны пальцы. */
+    /** Workstations that need fingers. */
     public static final TagKey<Block> STATIONS = TagKey.create(Registries.BLOCK, Mutagen.id("needs_hands"));
-    /** Инструменты и оружие, которые нечем держать. */
+    /** Tools and weapons there is nothing to hold with. */
     public static final TagKey<Item> TOOLS = TagKey.create(Registries.ITEM, Mutagen.id("needs_hands"));
 
     public static final Active NONE = new Active(Inventory.getSelectionSize(), false, false, false, false, false,
@@ -55,14 +55,14 @@ public final class Restrictions {
     }
 
     /**
-     * Действующие ограничения.
+     * Active restrictions.
      *
-     * @param hotbar     сколько первых ячеек пояса доступно
-     * @param lockedMain рюкзак (ячейки 9–35) заперт
-     * @param noCrafting заперта сетка крафта в инвентаре
-     * @param stations   какие станки недоступны
-     * @param diet       что тело ещё может есть, или null, если ограничения по еде нет
-     * @param foodLevel  на каком уровне застыла сытость у тела, которое не ест; -1 — ест как обычно
+     * @param hotbar     how many of the first hotbar slots are available
+     * @param lockedMain the backpack (slots 9–35) is locked
+     * @param noCrafting the inventory crafting grid is locked
+     * @param stations   which workstations are unavailable
+     * @param diet       what the body can still eat, or null if there is no food restriction
+     * @param foodLevel  the level at which hunger is frozen for a body that doesn't eat; -1 — eats as usual
      */
     public record Active(int hotbar, boolean lockedMain, boolean noOffhand, boolean noTools, boolean noCrafting,
                          boolean noBuilding, List<TagKey<Block>> stations, boolean noSleep,
@@ -123,7 +123,7 @@ public final class Restrictions {
                 foodLevel);
     }
 
-    /** Заперта ли ячейка инвентаря игрока (номер — как в {@link Inventory}). */
+    /** Whether a player inventory slot is locked (index as in {@link Inventory}). */
     public static boolean slotLocked(Player player, int index) {
         Active active = of(player);
         if (!active.any()) {
@@ -155,7 +155,7 @@ public final class Restrictions {
         return state.getBlock() instanceof BedBlock && of(player).noSleep();
     }
 
-    /** Ключ сообщения, если тело не станет это есть, иначе null. */
+    /** Message key if the body won't eat this, otherwise null. */
     @Nullable
     public static String refusesFood(Player player, ItemStack stack) {
         if (!stack.has(DataComponents.FOOD)) {
@@ -180,8 +180,8 @@ public final class Restrictions {
     }
 
     /**
-     * Каждый тик на сервере: выбранная ячейка пояса не может быть запертой, а вторая рука — занятой.
-     * Предмет из второй руки кладётся в свободную доступную ячейку, а если её нет — падает под ноги.
+     * Every tick on the server: the selected hotbar slot can't be locked, and the offhand can't be occupied.
+     * The offhand item is moved to a free available slot, and if there is none, it drops at the feet.
      */
     public static void tick(ServerPlayer player) {
         Active active = of(player);
@@ -189,7 +189,7 @@ public final class Restrictions {
             return;
         }
         if (active.foodLevel() >= 0) {
-            // Тело, которое не ест, и не голодает: сытость застыла там, где её оставило превращение.
+            // A body that doesn't eat doesn't starve either: hunger is frozen where the transformation left it.
             player.getFoodData().setFoodLevel(active.foodLevel());
             player.getFoodData().setSaturation(0.0F);
         }
@@ -210,7 +210,7 @@ public final class Restrictions {
         }
     }
 
-    /** Объяснить отказ строкой над хотбаром — не чаще раза в полторы секунды. */
+    /** Explain a refusal with an action bar message — no more than once every one and a half seconds. */
     public static void tell(Player player, String key) {
         if (player.level().isClientSide) {
             return;

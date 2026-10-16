@@ -10,11 +10,11 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 
 /**
- * Клиентская часть под NeoForge.
+ * Client side for NeoForge.
  * <p>
- * Экраны здесь регистрируются напрямую в {@link RegisterMenuScreensEvent}. Через Architectury это
- * делать нельзя: её реализация лишь вешает слушателя на то же событие, а из {@code FMLClientSetupEvent}
- * оно уже прошло — экран не регистрируется, и меню молча не открывается.
+ * Screens are registered here directly in {@link RegisterMenuScreensEvent}. Doing this through Architectury
+ * isn't possible: its implementation merely attaches a listener to the same event, and from {@code FMLClientSetupEvent}
+ * that event has already passed — the screen isn't registered, and the menu silently doesn't open.
  */
 public final class MutagenNeoForgeClient {
     private MutagenNeoForgeClient() {

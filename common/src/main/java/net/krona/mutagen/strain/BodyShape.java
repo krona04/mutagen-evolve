@@ -6,15 +6,15 @@ import net.minecraft.world.entity.player.Player;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Габариты тела носителя в данный момент: хитбокс, высота глаз, прибавка к дальности рук и масштаб модели.
+ * The host's body dimensions at the moment: hitbox, eye height, reach bonus and model scale.
  * <p>
- * Всё идёт по прогрессу основного штамма: на 0% — человек, на 100% — существо. Считается одинаково
- * на сервере и на клиенте, потому что оба знают штамм и прогресс.
+ * Everything follows the primary strain's progress: at 0% — human, at 100% — the creature. Computed the same way
+ * on the server and the client, because both know the strain and progress.
  */
 public record BodyShape(float width, float height, float eyeHeight, float reach, float renderScale) {
     public static final BodyShape HUMAN = new BodyShape(0.6F, 1.8F, 1.62F, 0.0F, 1.0F);
 
-    /** Базовая дальность взаимодействия игрока: нужна прослойке Pehkui, где дальность — множитель. */
+    /** The player's base interaction range: needed by the Pehkui layer, where reach is a multiplier. */
     public static final float BASE_BLOCK_REACH = 4.5F;
     public static final float BASE_ENTITY_REACH = 3.0F;
 

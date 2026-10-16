@@ -20,42 +20,42 @@ import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 /**
- * Превращение формы тела: кости игрока сами становятся частями существа.
+ * Body shape transformation: the player's bones themselves become parts of the creature.
  * <p>
- * Каждая кость, у которой есть пара в модели существа ({@link MorphPlan}), по мере своего заражения
- * плавно принимает её размеры, положение в теле и исходный наклон. Всё считается в общих координатах
- * модели, где у любого моба земля на одной высоте, поэтому тело не парит и не проваливается:
- * у крипера ноги укорачиваются, а корпус и голова вместе с этим опускаются к ним. Кости, которых
- * у существа нет, втягиваются в тело. Поверх формы {@link BodyMotion} добавляет судороги и подёргивания.
+ * Every bone that has a counterpart in the creature's model ({@link MorphPlan}) smoothly takes on its size,
+ * position in the body and initial tilt as it becomes infected. Everything is computed in shared model
+ * coordinates, where the ground is at the same height for any mob, so the body neither floats nor sinks:
+ * a creeper's legs get shorter, and the torso and head sink down to them along with it. Bones the
+ * creature doesn't have retract into the body. On top of the shape, {@link BodyMotion} adds convulsions and twitches.
  * <p>
- * Модель игрока одна на всех, поэтому перед ванильной анимацией кости возвращаются в исходную позу
- * ({@link #resetPose}) — иначе добавки копились бы от кадра к кадру и тело начинало бы вращаться.
- * Итог кадра запоминается ({@link Frame}): по нему части существа ложатся на ту же форму.
+ * The player model is shared by everyone, so before the vanilla animation the bones are reset to the initial pose
+ * ({@link #resetPose}) — otherwise offsets would accumulate frame to frame and the body would start spinning.
+ * The frame's result is stored ({@link Frame}): the creature's parts are fitted onto the same shape using it.
  */
 @Environment(EnvType.CLIENT)
 public final class BodyMorph {
     private static final Frame FRAME = new Frame();
     /**
-     * Сейчас рисуется рука от первого лица. Там рука привязана к камере, а не к телу: форму она меняет,
-     * но с плеча не уходит — иначе рука, становящаяся ногой крипера, всплывала бы посреди экрана.
+     * The first-person arm is being rendered right now. There the arm is attached to the camera, not the body: it changes shape
+     * but doesn't leave the shoulder — otherwise an arm turning into a creeper leg would float up into the middle of the screen.
      */
     private static boolean firstPerson;
-    /** Кость, которую превращение опускает ниже этого (в пикселях модели), становится ногой. */
+    /** A bone that the transformation lowers below this (in model pixels) becomes a leg. */
     private static final float LEG_DROP = 8.0F;
-    /** Насколько кость набухает в разгар перестройки. */
+    /** How much a bone swells at the height of restructuring. */
     private static final float SWELL = 0.12F;
-    /** Амплитуда дрожи перестраивающейся кости, в радианах. */
+    /** Tremor amplitude of a restructuring bone, in radians. */
     private static final float TREMOR = 0.035F;
 
-    /** С какой фазы кости с неё спадает одежда. */
+    /** From which phase clothing falls off the bone. */
     private static final float CLOTHES_SHED = 0.5F;
-    /** С какой фазы кость игрока полностью уступает место части существа. */
+    /** From which phase the player's bone fully gives way to the creature's part. */
     private static final float FULLY_TURNED = 0.98F;
 
     private BodyMorph() {
     }
 
-    /** Перед ванильной анимацией: исходная поза и масштаб для всех костей. */
+    /** Before the vanilla animation: initial pose and scale for all bones. */
     public static void resetPose(PlayerModel<?> model) {
         for (ModelPart part : bones(model)) {
             part.resetPose();
@@ -65,7 +65,7 @@ public final class BodyMorph {
         }
     }
 
-    /** После ванильной анимации: форма, поза и движения мутанта. */
+    /** After the vanilla animation: the mutant's shape, pose and movements. */
     public static void apply(PlayerModel<?> model, LivingEntity entity) {
         FRAME.clear(entity.getId());
         if (!(entity instanceof Player player)) {
@@ -80,10 +80,10 @@ public final class BodyMorph {
         }
 
         if (MutagenConfig.get().bodyMorph) {
-            // Шаг ног до любых правок: рука, которая становится ногой, перенимает его у ноги по диагонали.
+            // Leg stride before any edits: an arm becoming a leg takes it over from the diagonally opposite leg.
             float[] rightStep = {model.rightLeg.xRot, model.rightLeg.yRot, model.rightLeg.zRot};
             float[] leftStep = {model.leftLeg.xRot, model.leftLeg.yRot, model.leftLeg.zRot};
-            // Сначала поза: сдвиг формы считается уже от нового наклона кости.
+            // Pose first: the shape offset is computed from the bone's new tilt.
             posture(model, strain, gene.progress());
             MorphPlan plan = MorphPlan.of(strain);
             for (Strain.Bone bone : Strain.Bone.values()) {
@@ -113,9 +113,9 @@ public final class BodyMorph {
     }
 
     /**
-     * Одежда (второй слой скина) спадает с кости, когда та превратилась наполовину: дальше на ней шкура
-     * существа, и два слоя кожи друг над другом выглядели бы как ошибка. Кость, превратившаяся до конца,
-     * прячется целиком — остаётся часть существа, со всеми её просветами, как между рёбрами скелета.
+     * Clothing (the second skin layer) falls off a bone once it has transformed halfway: from then on it has the creature's
+     * hide, and two layers of skin on top of each other would look like a bug. A fully transformed bone
+     * is hidden entirely — what remains is the creature's part, with all its gaps, like between a skeleton's ribs.
      */
     private static void shed(PlayerModel<?> model, Strain strain, float progress) {
         MorphPlan plan = MorphPlan.of(strain);
@@ -142,13 +142,13 @@ public final class BodyMorph {
     }
 
     /**
-     * Кость принимает форму части существа: точка поворота идёт к её месту в теле, наклон — к её
-     * исходному наклону, а коробка кости растягивается и сдвигается к её коробке.
+     * The bone takes the shape of the creature's part: the pivot moves to its place in the body, the tilt to its
+     * initial tilt, and the bone's box stretches and shifts towards its box.
      * <p>
-     * Как у живого тела, всё это идёт не разом и не по прямой. Конечность сперва выходит вперёд,
-     * затем опускается и лишь под конец подтягивается вбок — так рука крипера становится передней ногой,
-     * огибая грудь, а не проходя сквозь неё. Толщина кости меняется раньше длины. Пока кость
-     * перестраивается, она набухает и мелко дрожит, а к концу успокаивается.
+     * As with a living body, none of this happens at once or in a straight line. The limb first moves forward,
+     * then drops, and only at the end pulls in sideways — this is how a creeper's arm becomes a front leg,
+     * going around the chest instead of through it. The bone's thickness changes before its length. While the bone
+     * is restructuring it swells and trembles slightly, and calms down towards the end.
      */
     private static void reshape(Strain.Bone bone, ModelPart part, MorphPlan.Target target, float t, float time,
                                 float[] step) {
@@ -156,16 +156,16 @@ public final class BodyMorph {
         PartPose goal = target.pose();
         boolean becomesLeg = goal.y - own.y > LEG_DROP;
         if (becomesLeg && step != null) {
-            // Рука, ставшая ногой, больше не машет как рука и не держит позу хвата: она шагает,
-            // в пару с ногой по диагонали, как ходят четвероногие.
+            // An arm that has become a leg no longer swings like an arm or holds a grip pose: it steps
+            // in pair with the diagonally opposite leg, the way quadrupeds walk.
             float gait = window(t, 0.15F, 0.70F);
             part.xRot = Mth.lerp(gait, part.xRot, step[0]);
             part.yRot = Mth.lerp(gait, part.yRot, step[1]);
             part.zRot = Mth.lerp(gait, part.zRot, step[2]);
         }
         float travel = firstPerson ? 0.0F : 1.0F;
-        // Сперва тело оседает — кость опускается вдоль бока вместе с укорачиванием, — и лишь потом
-        // уходит вперёд или назад и подтягивается под корпус. Так рука крипера не торчит вперёд, как у зомби.
+        // First the body settles — the bone drops along the side as it shortens — and only then
+        // moves forward or back and pulls in under the torso. This way a creeper's arm doesn't stick forward like a zombie's.
         float lengthPhase = window(t, 0.0F, 0.75F);
         float pivotX = part.x + (goal.x - own.x) * window(t, 0.50F, 1.0F) * travel;
         float pivotY = part.y + (goal.y - own.y) * lengthPhase * travel;
@@ -178,7 +178,7 @@ public final class BodyMorph {
 
         float thickness = window(t, 0.0F, 0.70F);
         float swell = 1.0F + SWELL * active;
-        // Высота крепления и длина кости меняются вместе: иначе ступни на середине пути уходили бы под землю.
+        // Attachment height and bone length change together: otherwise the feet would sink into the ground halfway through.
         Box shape = Box.of(part).lerp(target.box(), thickness, lengthPhase, thickness)
                 .scaled(swell, 1.0F + SWELL * 0.4F * active, swell);
         Box.Fit fit = Box.of(part).fit(shape);
@@ -193,7 +193,7 @@ public final class BodyMorph {
         FRAME.put(bone, t, pivotX, pivotY, pivotZ, shape, becomesLeg && t >= 0.5F);
     }
 
-    /** Часть превращения, пришедшаяся на окно [from, to], со сглаженным началом и концом. */
+    /** The portion of the transformation falling into the window [from, to], with a smoothed start and end. */
     private static float window(float t, float from, float to) {
         float x = Mth.clamp((t - from) / (to - from), 0.0F, 1.0F);
         return x * x * (3.0F - 2.0F * x);
@@ -204,7 +204,7 @@ public final class BodyMorph {
                 .getGameTimeDeltaPartialTick(true)) * 0.35F;
     }
 
-    /** Кости, которых у существа нет, усыхают и уходят в тело. */
+    /** Bones the creature doesn't have shrivel and retract into the body. */
     private static void absorb(ModelPart part, float t) {
         float scale = Math.max(0.001F, 1.0F - t);
         part.xScale = scale;
@@ -212,7 +212,7 @@ public final class BodyMorph {
         part.zScale = scale;
     }
 
-    /** Поза из данных штамма: поворот кости в градусах, например вытянутые вперёд руки зомби. */
+    /** Pose from the strain data: bone rotation in degrees, e.g. a zombie's arms stretched forward. */
     private static void posture(PlayerModel<?> model, Strain strain, float progress) {
         for (Strain.Morph morph : strain.body().morph()) {
             float t = Infection.bonePhase(strain, morph.bone(), progress);
@@ -226,12 +226,12 @@ public final class BodyMorph {
         }
     }
 
-    /** Сдвиг в координатах части → сдвиг точки поворота в координатах родителя. */
+    /** Offset in part coordinates → pivot offset in parent coordinates. */
     public static Vector3f rotate(ModelPart part, Vector3f local) {
         return new Quaternionf().rotationZYX(part.zRot, part.yRot, part.xRot).transform(new Vector3f(local));
     }
 
-    /** Слои одежды повторяют кости: ваниль копирует их раньше, чем штамм успевает кость изменить. */
+    /** Clothing layers follow the bones: vanilla copies them before the strain gets to change the bone. */
     private static void copyOverlays(PlayerModel<?> model) {
         model.hat.copyFrom(model.head);
         model.jacket.copyFrom(model.body);
@@ -261,15 +261,15 @@ public final class BodyMorph {
         firstPerson = value;
     }
 
-    /** Форма последнего кадра этого игрока, если она уже посчитана. */
+    /** This player's last-frame shape, if it has already been computed. */
     @Nullable
     public static Frame frame(Player player) {
         return FRAME.owner == player.getId() ? FRAME : null;
     }
 
     /**
-     * Итог превращения за кадр: для каждой кости — фаза, точка поворота до сдвига коробки и коробка,
-     * которую кость сейчас занимает. Часть существа вписывается в ту же коробку, и поверхности совпадают.
+     * The transformation result for a frame: for each bone — the phase, the pivot before the box offset, and the box
+     * the bone currently occupies. The creature's part is fitted into the same box, and the surfaces line up.
      */
     public static final class Frame {
         private int owner = Integer.MIN_VALUE;
@@ -299,7 +299,7 @@ public final class BodyMorph {
             return phase[bone.ordinal()];
         }
 
-        /** Рука уже больше нога, чем рука: предмет в ней не удержать и не нарисовать. */
+        /** The arm is already more leg than arm: an item can't be held in it or rendered. */
         public boolean becameLeg(Strain.Bone bone) {
             return leg[bone.ordinal()];
         }

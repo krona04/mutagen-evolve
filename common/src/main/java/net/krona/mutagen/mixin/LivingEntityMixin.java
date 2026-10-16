@@ -11,7 +11,7 @@ import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
- * Слабости и иммунитеты штаммов: множитель входящего урона и блокировка эффектов.
+ * Strain weaknesses and immunities: incoming damage multiplier and effect blocking.
  */
 @Mixin(LivingEntity.class)
 public abstract class LivingEntityMixin {
