@@ -10,8 +10,8 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
- * A body with nothing to build with doesn't place blocks. Chests, doors and levers still open:
- * only placing blocks is forbidden.
+ * Тело, которому нечем строить, блоков не ставит. Сундуки, двери и рычаги при этом открываются:
+ * запрещена только установка блока.
  */
 @Mixin(BlockItem.class)
 public abstract class BlockItemMixin {

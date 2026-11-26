@@ -14,9 +14,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * A player's mutation state. Lives on the server; a copy is sent to the client for rendering.
+ * Состояние мутации игрока. Живёт на сервере, на клиент приезжает копией для отрисовки.
  * <p>
- * The data format has been versioned since the mod's first version: the world converter in 2.0 will rely on this field.
+ * Формат данных версионируется с первой версии мода: конвертер миров в 2.0 будет опираться на это поле.
  */
 public final class MutagenData {
     public static final int FORMAT_VERSION = 1;
@@ -39,7 +39,7 @@ public final class MutagenData {
         return null;
     }
 
-    /** The primary strain — the one with the highest progress. */
+    /** Основной штамм — тот, у которого прогресс выше всех. */
     @Nullable
     public Gene primary() {
         Gene best = null;
@@ -82,8 +82,8 @@ public final class MutagenData {
     }
 
     /**
-     * Humanity: 100 minus the progress of the strongest strain.
-     * In 0.4 this will become a weighted sum of all genes.
+     * Человечность: 100 минус прогресс самого сильного штамма.
+     * В 0.4 сюда придёт взвешенная сумма всех генов.
      */
     public float humanity() {
         Gene primary = primary();
@@ -91,9 +91,9 @@ public final class MutagenData {
     }
 
     /**
-     * Flag "the state changed substantially": a gene appeared or left, the fixation changed.
-     * Such changes go to the client immediately. Smooth progress movement doesn't set the flag —
-     * the network sends it in batches, see {@link net.krona.mutagen.network.MutagenNetwork}.
+     * Флаг «состояние изменилось по сути»: появился или ушёл ген, сменилась фиксация.
+     * Такие изменения уходят на клиент сразу. Плавное движение прогресса флаг не ставит —
+     * его сеть отправляет порциями, см. {@link net.krona.mutagen.network.MutagenNetwork}.
      */
     public boolean isDirty() {
         return dirty;
@@ -131,7 +131,7 @@ public final class MutagenData {
         markDirty();
     }
 
-    /** A copy of the genes for sending to the client and comparing with what has already been sent. */
+    /** Копия генов для отправки на клиент и сравнения с тем, что уже отправлено. */
     public List<Gene> snapshot() {
         List<Gene> copy = new ArrayList<>(genes.size());
         for (Gene gene : genes) {
@@ -140,7 +140,7 @@ public final class MutagenData {
         return copy;
     }
 
-    /** Client: accept the state received from the server. */
+    /** Клиент: принять состояние, пришедшее с сервера. */
     public void applySnapshot(List<Gene> snapshot) {
         genes.clear();
         for (Gene gene : snapshot) {
@@ -156,12 +156,12 @@ public final class MutagenData {
         markDirty();
     }
 
-    /** Progress of one strain in the player's body. */
+    /** Прогресс одного штамма в теле игрока. */
     public static final class Gene {
-        /** Remainders below this are a computation error, not progress. */
+        /** Остатки меньше этого — погрешность вычислений, а не прогресс. */
         private static final float EDGE = 0.001F;
 
-        /** Compact network encoding: without NBT string keys. */
+        /** Компактная запись для сети: без строковых ключей NBT. */
         public static final StreamCodec<ByteBuf, Gene> STREAM_CODEC = StreamCodec.composite(
                 ResourceLocation.STREAM_CODEC, Gene::strainId,
                 ByteBufCodecs.FLOAT, Gene::progress,
@@ -190,19 +190,19 @@ public final class MutagenData {
             return strainId;
         }
 
-        /** Strain progress, 0–100. */
+        /** Прогресс штамма, 0–100. */
         public float progress() {
             return progress;
         }
 
         public void setProgress(float value) {
-            // Absorption goes in steps of 1/30%, and the fractional error left progress at 99.99999:
-            // the full form never arrived. Progress that comes close to the edge snaps exactly to the edge.
+            // Усвоение идёт шагами по 1/30%, и дробная погрешность оставляла прогресс на 99.99999:
+            // полная форма так и не наступала. Подошедший к краю прогресс встаёт ровно на край.
             float clamped = Math.max(0.0F, Math.min(100.0F, value));
             this.progress = clamped > 100.0F - EDGE ? 100.0F : clamped;
         }
 
-        /** Absorption reserve: injected but not yet processed by the body. */
+        /** Запас усвоения: введено, но телом ещё не переработано. */
         public float pending() {
             return pending;
         }
@@ -216,7 +216,7 @@ public final class MutagenData {
             setPending(pending + value);
         }
 
-        /** Stabilizer: progress no longer decays on its own. */
+        /** Стабилизатор: прогресс больше не откатывается сам. */
         public boolean locked() {
             return locked;
         }

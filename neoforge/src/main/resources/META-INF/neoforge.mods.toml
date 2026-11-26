@@ -43,3 +43,10 @@ side = "BOTH"
 
 [[mixins]]
 config = "mutagen.mixins.json"
+
+[[dependencies.mutagen]]
+modId = "geckolib"
+type = "required"
+versionRange = "[4.8.2,5)"
+ordering = "AFTER"
+side = "BOTH"

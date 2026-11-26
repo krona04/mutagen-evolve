@@ -6,15 +6,15 @@ import net.minecraft.world.entity.player.Player;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * The host's body dimensions at the moment: hitbox, eye height, reach bonus and model scale.
+ * Габариты тела носителя в данный момент: хитбокс, высота глаз, прибавка к дальности рук и масштаб модели.
  * <p>
- * Everything follows the primary strain's progress: at 0% — human, at 100% — the creature. Computed the same way
- * on the server and the client, because both know the strain and progress.
+ * Всё идёт по прогрессу основного штамма: на 0% — человек, на 100% — существо. Считается одинаково
+ * на сервере и на клиенте, потому что оба знают штамм и прогресс.
  */
 public record BodyShape(float width, float height, float eyeHeight, float reach, float renderScale) {
     public static final BodyShape HUMAN = new BodyShape(0.6F, 1.8F, 1.62F, 0.0F, 1.0F);
 
-    /** The player's base interaction range: needed by the Pehkui layer, where reach is a multiplier. */
+    /** Базовая дальность взаимодействия игрока: нужна прослойке Pehkui, где дальность — множитель. */
     public static final float BASE_BLOCK_REACH = 4.5F;
     public static final float BASE_ENTITY_REACH = 3.0F;
 
@@ -31,13 +31,40 @@ public record BodyShape(float width, float height, float eyeHeight, float reach,
         if (strain == null) {
             return HUMAN;
         }
-        float t = Math.max(0.0F, Math.min(1.0F, gene.progress() / 100.0F));
+        return transition(strain.profile(), gene.progress(), new BodyShape(strain.targetWidth(),
+                strain.targetHeight(), strain.targetEyeHeight(), strain.body().reach(), strain.targetScale()));
+    }
+
+    public static BodyShape transition(String strain, float progress, BodyShape target) {
+        float t = TransformationProgress.dimensions(strain, progress);
+        float width = lerp(HUMAN.width, target.width, t);
+        float height = lerp(HUMAN.height, target.height, t);
+        float eye = lerp(HUMAN.eyeHeight, target.eyeHeight, t);
+        if (TransformationProgress.compact(strain)) {
+            // The preparatory crouch already changes the visible height, before fusion begins.
+            float prepare = TransformationProgress.compactPrepare(progress);
+            float fuse = TransformationProgress.compactFuse(progress);
+            float folded = switch (strain) {
+                case "phantom" -> 0.65F;
+                case "bee" -> 0.79F;
+                default -> 0.80F;
+            };
+            width = lerp(HUMAN.width, target.width, fuse);
+            height = lerp(lerp(HUMAN.height, HUMAN.height * folded, prepare), target.height, fuse);
+            eye = lerp(lerp(HUMAN.eyeHeight, HUMAN.eyeHeight * folded, prepare), target.eyeHeight, fuse);
+        }
         return new BodyShape(
-                lerp(HUMAN.width, strain.targetWidth(), t),
-                lerp(HUMAN.height, strain.targetHeight(), t),
-                lerp(HUMAN.eyeHeight, strain.targetEyeHeight(), t),
-                strain.body().reach() * t,
-                lerp(1.0F, strain.targetScale(), t));
+                width, height, eye,
+                target.reach * Math.max(0.0F, Math.min(1.0F, progress / 100.0F)),
+                lerp(1.0F, target.renderScale, t));
+    }
+
+    public net.minecraft.world.entity.EntityDimensions posed(net.minecraft.world.entity.EntityDimensions vanilla,
+                                                             float scale, float override) {
+        float width = lerp(vanilla.width() * widthFactor() / scale, this.width, override);
+        float height = lerp(vanilla.height() * heightFactor() / scale, this.height, override);
+        float eye = lerp(vanilla.eyeHeight() * eyeFactor() / scale, eyeHeight, override);
+        return vanilla.scale(width / vanilla.width(), height / vanilla.height()).withEyeHeight(eye);
     }
 
     public boolean isHuman() {

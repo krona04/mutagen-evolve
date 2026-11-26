@@ -19,7 +19,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * Two player renderer tweaks: the gradual mutation layer and full model replacement at the fifth stage.
+ * Две правки рендера игрока: слой постепенной мутации и полная подмена модели на пятой стадии.
  */
 @Mixin(PlayerRenderer.class)
 public abstract class PlayerRendererMixin
@@ -51,7 +51,7 @@ public abstract class PlayerRendererMixin
                 Minecraft.getInstance().getEntityRenderDispatcher().getRenderer(dummy);
         renderer.render(dummy, entityYaw, partialTicks, poseStack, buffer, packedLight);
 
-        // We draw the name tag ourselves: the dummy doesn't have one, and the player must be recognizable on the server.
+        // Ник рисуем сами: у манекена его нет, а игрока на сервере надо узнавать.
         if (shouldShowName(player)) {
             renderNameTag(player, player.getDisplayName(), poseStack, buffer, packedLight, partialTicks);
         }

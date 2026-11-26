@@ -1,0 +1,142 @@
+{
+  "entity": "minecraft:piglin",
+  "color": "#D9967A",
+  "difficulty": 3,
+  "synthesis": {
+    "catalyst": "minecraft:gold_ingot",
+    "catalyst_count": 2,
+    "time": 500
+  },
+  "body": {
+    "model_layer": "minecraft:piglin",
+    "spread": [
+      "head",
+      "body",
+      "right_arm",
+      "left_arm",
+      "right_leg",
+      "left_leg"
+    ],
+    "skin": "texture",
+    "parts": [
+      {
+        "part": "head"
+      },
+      {
+        "part": "body"
+      },
+      {
+        "part": "right_arm"
+      },
+      {
+        "part": "left_arm"
+      },
+      {
+        "part": "right_leg"
+      },
+      {
+        "part": "left_leg"
+      }
+    ]
+  },
+  "traits": [
+    {
+      "type": "mutagen:damage_factor",
+      "from_stage": "manifestation",
+      "damage_type": "#minecraft:is_fire",
+      "factor": 0.7
+    },
+    {
+      "type": "mutagen:attribute",
+      "from_stage": "mutation",
+      "attribute": "minecraft:generic.max_health",
+      "amount": 4
+    },
+    {
+      "type": "mutagen:mob_neutrality",
+      "from_stage": "mutation",
+      "entities": [
+        "minecraft:piglin",
+        "minecraft:piglin_brute"
+      ]
+    },
+    {
+      "type": "mutagen:hoard",
+      "from_stage": "mutation",
+      "items": "#minecraft:piglin_loved"
+    },
+    {
+      "type": "mutagen:fear",
+      "from_stage": "mutation",
+      "entities": [
+        "minecraft:zombie",
+        "minecraft:zombified_piglin"
+      ],
+      "radius": 6
+    },
+    {
+      "type": "mutagen:attribute",
+      "from_stage": "domination",
+      "attribute": "minecraft:generic.attack_damage",
+      "amount": 2
+    },
+    {
+      "type": "mutagen:homesick",
+      "from_stage": "full",
+      "dimension": "minecraft:the_nether",
+      "effects": [
+        "minecraft:weakness"
+      ]
+    }
+  ],
+  "abilities": [
+    {
+      "type": "mutagen:effect_burst",
+      "from_stage": "manifestation",
+      "name": "mutagen.ability.piglin.fury",
+      "cooldown": 400,
+      "cost": {
+        "hunger": 2
+      },
+      "effects": [
+        "minecraft:strength",
+        "minecraft:speed"
+      ],
+      "duration": 100
+    },
+    {
+      "type": "mutagen:lunge",
+      "from_stage": "mutation",
+      "name": "mutagen.ability.piglin.charge",
+      "cooldown": 240,
+      "cost": {
+        "hunger": 2
+      },
+      "range": 6,
+      "power": 1.2,
+      "damage": 5,
+      "requires": "ground"
+    },
+    {
+      "type": "mutagen:rally",
+      "from_stage": "full",
+      "name": "mutagen.ability.piglin.warband",
+      "cooldown": 1400,
+      "cost": {
+        "hunger": 5
+      },
+      "apex": true,
+      "entities": [
+        "minecraft:piglin",
+        "minecraft:piglin_brute"
+      ],
+      "radius": 20,
+      "duration": 400,
+      "requires": "nether"
+    }
+  ],
+  "vision": {
+    "shader": "mutagen:shaders/post/piglin.json",
+    "from_stage": "manifestation"
+  }
+}

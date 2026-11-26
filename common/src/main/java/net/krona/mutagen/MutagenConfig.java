@@ -9,8 +9,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 /**
- * Prototype config: the few things that already make sense to tweak.
- * The full set of settings from the design document arrives together with the mechanics it describes.
+ * Конфиг прототипа: то немногое, что уже имеет смысл крутить.
+ * Полный набор настроек из дизайн-документа приходит вместе с механиками, которые он описывает.
  */
 public final class MutagenConfig {
     public static final String SCOPE_WORLD = "world";
@@ -19,34 +19,48 @@ public final class MutagenConfig {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static MutagenConfig instance;
 
-    /** Multiplier for absorption and decay speed. */
+    /** Множитель скорости усвоения и отката. */
     public float transformationSpeed = 1.0F;
-    /** How much progress one serum dose of 100% purity gives. */
+    /** Сколько прогресса даёт одна доза сыворотки со стопроцентной чистотой. */
     public float doseStrength = 20.0F;
-    /** Humanity restrictions: refusing to wear armor and other costs. */
+    /** Ограничения человечности: отказ носить броню и прочая цена. */
     public boolean humanityPenalties = true;
-    /** Undead burning in the sun. */
+    /** Горение на солнце у нежити. */
     public boolean sunlightBurn = true;
-    /** Mutation indicator in the HUD. */
+    /** Индикатор мутации в интерфейсе. */
     public boolean hud = true;
-    /** Full model replacement at the fifth stage. Disable if it conflicts with a skin mod. */
+    /**
+     * Угол экрана для индикатора: {@code top_left} (по умолчанию), {@code top_right}, {@code bottom_right},
+     * {@code bottom_left}. Внизу слева его закрывает чат, поэтому там он больше не стоит по умолчанию.
+     */
+    public String hudCorner = "top_left";
+    /** Полная подмена модели на пятой стадии. Выключите, если конфликтует с модом на скины. */
     public boolean fullFormRender = true;
-    /** How many genes the body can hold. Chimeras arrive in 0.5. */
+    /** Сколько генов может держать тело. Химеры приходят в 0.5. */
     public int maxGenes = 1;
-    /** Whose research: {@code "world"} — shared across the world, {@code "player"} — each their own. */
+    /** Чья изученность: {@code "world"} — общая на мир, {@code "player"} — у каждого своя. */
     public String knowledgeScope = SCOPE_WORLD;
-    /** Multiplier for research gained per sequencer run. */
+    /** Множитель прироста изученности за прогон секвенатора. */
     public float researchSpeed = 1.0F;
-    /** From which genome purity the synthesizer yields two ampoules instead of one. 101 — never. */
+    /** С какой чистоты генома синтезатор выдаёт две ампулы вместо одной. 101 — никогда. */
     public float doubleSerumPurity = 85.0F;
-    /** Hybrid stages III–IV: creature parts on the player's body. Disable if it conflicts with a model mod. */
+    /** Гибридные стадии III–IV: части существа на теле игрока. Выключите, если конфликтует с модом на модели. */
     public boolean hybridRender = true;
-    /** Body proportions and posture change along with the infection. */
+    /** Пропорции и осанка тела меняются вместе с заражением. */
     public boolean bodyMorph = true;
-    /** Convulsions on stage transitions and involuntary twitches from stage III. */
+    /** Судороги на переходе стадий и непроизвольные подёргивания со стадии III. */
     public boolean bodyMotion = true;
-    /** If Pehkui is installed, the body changes through it: hitbox, eyes, reach and inertia. */
+    /** Если установлен Pehkui, тело меняется через него: хитбокс, глаза, дальность рук и инерция. */
     public boolean pehkuiIntegration = true;
+    /**
+     * Зрение существа: со стадии IV мир видится его глазами — зелёным, как у крипера, в восемь глаз, как
+     * у паука, в тепле, как у ифрита. Выключено по умолчанию; переключается клавишей (N) прямо в игре.
+     */
+    public boolean mobVision = false;
+    /** Раз за запуск смотрит на Modrinth, не вышла ли новая версия, и пишет об этом в чат. */
+    public boolean checkForUpdates = true;
+    /** При входе в мир или на сервер: в первый раз приветствие, потом строка о поддержке мода на Ko-fi. */
+    public boolean showSupportMessage = true;
 
     public static MutagenConfig get() {
         if (instance == null) {
@@ -77,7 +91,7 @@ public final class MutagenConfig {
             Files.createDirectories(path.getParent());
             Files.writeString(path, GSON.toJson(get()));
         } catch (IOException ignored) {
-            // config is not critical: run on default values
+            // конфиг не критичен: работаем на значениях по умолчанию
         }
     }
 

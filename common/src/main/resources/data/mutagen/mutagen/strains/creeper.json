@@ -49,64 +49,109 @@
       "type": "mutagen:damage_factor",
       "from_stage": "manifestation",
       "damage_type": "#minecraft:is_explosion",
-      "factor": 0.0,
-      "description": "mutagen.trait.explosion_immunity"
+      "factor": 0.7
     },
     {
       "type": "mutagen:cat_fear",
-      "from_stage": "manifestation"
+      "from_stage": "manifestation",
+      "radius": 6
+    },
+    {
+      "type": "mutagen:attribute",
+      "from_stage": "mutation",
+      "attribute": "minecraft:generic.armor",
+      "amount": 3
     },
     {
       "type": "mutagen:attribute",
       "from_stage": "mutation",
       "attribute": "minecraft:generic.movement_speed",
-      "amount": 0.12,
-      "operation": "add_multiplied_total",
-      "description": "mutagen.trait.creeper.quiet"
-    },
-    {
-      "type": "mutagen:attribute",
-      "from_stage": "mutation",
-      "attribute": "minecraft:generic.attack_damage",
-      "amount": -1.0,
-      "description": "mutagen.trait.creeper.no_hands"
+      "amount": 0.1,
+      "operation": "add_multiplied_total"
     },
     {
       "type": "mutagen:damage_factor",
       "from_stage": "mutation",
       "damage_type": "#minecraft:is_fire",
-      "factor": 1.5,
-      "description": "mutagen.trait.fire_vulnerability"
+      "factor": 1.35
     },
     {
-      "type": "mutagen:armor_rejection",
-      "from_stage": "full"
+      "type": "mutagen:mob_neutrality",
+      "from_stage": "mutation",
+      "entities": [
+        "minecraft:creeper"
+      ]
+    },
+    {
+      "type": "mutagen:damage_factor",
+      "from_stage": "domination",
+      "damage_type": "#minecraft:is_fall",
+      "factor": 0.5
     },
     {
       "type": "mutagen:no_offhand",
-      "from_stage": "mutation"
-    },
-    {
-      "type": "mutagen:inventory_limit",
-      "from_stage": "domination",
-      "hotbar": 5
+      "from_stage": "domination"
     },
     {
       "type": "mutagen:no_tools",
-      "from_stage": "domination"
+      "from_stage": "full"
     },
     {
       "type": "mutagen:no_crafting",
-      "from_stage": "domination"
-    },
-    {
-      "type": "mutagen:inventory_limit",
-      "from_stage": "full",
-      "hotbar": 3
+      "from_stage": "full"
     },
     {
       "type": "mutagen:no_building",
       "from_stage": "full"
+    },
+    {
+      "type": "mutagen:armor_rejection",
+      "from_stage": "full"
     }
-  ]
+  ],
+  "abilities": [
+    {
+      "type": "mutagen:shockwave",
+      "from_stage": "manifestation",
+      "name": "mutagen.ability.creeper.release",
+      "cooldown": 220,
+      "cost": {
+        "hunger": 1
+      },
+      "radius": 3,
+      "damage": 2,
+      "knockback": 1.1
+    },
+    {
+      "type": "mutagen:effect_burst",
+      "from_stage": "mutation",
+      "name": "mutagen.ability.creeper.camouflage",
+      "cooldown": 500,
+      "cost": {
+        "hunger": 2
+      },
+      "effects": [
+        "minecraft:invisibility"
+      ],
+      "duration": 100
+    },
+    {
+      "type": "mutagen:shockwave",
+      "from_stage": "full",
+      "name": "mutagen.ability.creeper.detonate",
+      "cooldown": 1200,
+      "cost": {
+        "hunger": 6,
+        "health": 4
+      },
+      "apex": true,
+      "radius": 6,
+      "damage": 12,
+      "knockback": 1.6
+    }
+  ],
+  "vision": {
+    "shader": "minecraft:shaders/post/creeper.json",
+    "from_stage": "manifestation"
+  }
 }

@@ -1,0 +1,15 @@
+{
+  "replace": false,
+  "values": [
+    "minecraft:honey_bottle",
+    "minecraft:sweet_berries",
+    "minecraft:glow_berries",
+    "minecraft:cookie",
+    "minecraft:pumpkin_pie",
+    "minecraft:melon_slice",
+    "minecraft:apple",
+    "minecraft:golden_apple",
+    "minecraft:enchanted_golden_apple",
+    "minecraft:chorus_fruit"
+  ]
+}

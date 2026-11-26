@@ -5,6 +5,7 @@ import dev.architectury.networking.NetworkManager;
 import dev.architectury.utils.Env;
 import dev.architectury.utils.EnvExecutor;
 import net.krona.mutagen.Mutagen;
+import net.krona.mutagen.ability.AbilityUse;
 import net.krona.mutagen.data.MutagenData;
 import net.krona.mutagen.data.MutagenPlayer;
 import net.krona.mutagen.knowledge.MutagenKnowledge;
@@ -31,12 +32,12 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * The mod's networking. The server computes the state; the client gets a copy for the HUD and rendering.
+ * Сеть мода. Состояние считает сервер, клиент получает копию для интерфейса и отрисовки.
  * <p>
- * Since 0.2.1 player state is sent as deltas. The server remembers what it has already sent and resends only
- * noticeable changes: to the player themselves — from 0.1% of progress or reserve (enough for a smooth bar),
- * to everyone else — from 1% of progress or on a stage change, because they only need the appearance.
- * Previously the whole state was sent as NBT every second while absorption was in progress.
+ * С 0.2.1 состояние игрока уходит дельтами. Сервер помнит, что уже отправил, и шлёт снова только
+ * заметное: самому игроку — от 0.1% прогресса или запаса (этого хватает на плавную полосу),
+ * остальным — от 1% прогресса или при смене стадии, потому что им нужен только облик.
+ * Раньше состояние целиком уходило в NBT каждую секунду, пока шло усвоение.
  */
 public final class MutagenNetwork {
     private static final Logger LOGGER = LogUtils.getLogger();
@@ -50,8 +51,8 @@ public final class MutagenNetwork {
     }
 
     public static void init() {
-        // The client registers the handlers (and with them the packet types themselves);
-        // a dedicated server only needs to know it is allowed to send such packets.
+        // Клиент регистрирует обработчики (а вместе с ними и сами типы пакетов),
+        // выделенному серверу достаточно знать, что он имеет право такие пакеты отправлять.
         EnvExecutor.runInEnv(Env.CLIENT, () -> MutagenNetwork::registerClientReceivers);
         EnvExecutor.runInEnv(Env.SERVER, () -> MutagenNetwork::registerServerTypes);
 
@@ -63,6 +64,14 @@ public final class MutagenNetwork {
                         menu.fill(player, payload.recipe());
                     }
                 }));
+
+        NetworkManager.registerReceiver(NetworkManager.Side.C2S, UseAbilityPayload.TYPE,
+                UseAbilityPayload.STREAM_CODEC,
+                (payload, context) -> context.queue(() -> {
+                    if (context.getPlayer() instanceof ServerPlayer player) {
+                        AbilityUse.use(player, payload.index());
+                    }
+                }));
     }
 
     private static void registerServerTypes() {
@@ -70,6 +79,7 @@ public final class MutagenNetwork {
         NetworkManager.registerS2CPayloadType(StagePayload.TYPE, StagePayload.STREAM_CODEC);
         NetworkManager.registerS2CPayloadType(StrainsPayload.TYPE, StrainsPayload.STREAM_CODEC);
         NetworkManager.registerS2CPayloadType(KnowledgePayload.TYPE, KnowledgePayload.STREAM_CODEC);
+        NetworkManager.registerS2CPayloadType(AbilityUsedPayload.TYPE, AbilityUsedPayload.STREAM_CODEC);
     }
 
     private static void registerClientReceivers() {
@@ -81,18 +91,26 @@ public final class MutagenNetwork {
                 net.krona.mutagen.client.MutagenClientHooks::handleStrains);
         NetworkManager.registerReceiver(NetworkManager.Side.S2C, KnowledgePayload.TYPE, KnowledgePayload.STREAM_CODEC,
                 net.krona.mutagen.client.MutagenClientHooks::handleKnowledge);
+        NetworkManager.registerReceiver(NetworkManager.Side.S2C, AbilityUsedPayload.TYPE,
+                AbilityUsedPayload.STREAM_CODEC,
+                net.krona.mutagen.client.MutagenClientHooks::handleAbilityUsed);
     }
 
-    // --- Player state ---
+    /** Способность применена: клиенту нужно завести таймер перезарядки. */
+    public static void sendAbilityUsed(ServerPlayer player, int index, int cooldown) {
+        NetworkManager.sendToPlayer(player, new AbilityUsedPayload(index, cooldown));
+    }
 
-    /** Send the state right away, without comparing to what was sent: join, death, dimension change, commands. */
+    // --- Состояние игрока ---
+
+    /** Отправить состояние сразу, не сравнивая с отправленным: вход, смерть, смена измерения, команды. */
     public static void syncPlayer(ServerPlayer player) {
         syncPlayer(player, true);
     }
 
     /**
-     * Sends the player's state to the player themselves and to those who can see them, if it has changed
-     * noticeably since the last send. {@code force} sends it regardless.
+     * Отправляет состояние игрока ему самому и тем, кто его видит, если с прошлой отправки
+     * оно заметно изменилось. {@code force} отправляет в любом случае.
      */
     public static void syncPlayer(ServerPlayer player, boolean force) {
         MutagenData data = MutagenPlayer.of(player);
@@ -117,7 +135,7 @@ public final class MutagenNetwork {
         }
     }
 
-    /** Someone started seeing the player: they need the appearance right away, not on the next change. */
+    /** Кто-то начал видеть игрока: ему нужен облик сразу, а не при следующем изменении. */
     public static void sendTo(ServerPlayer watcher, ServerPlayer target) {
         NetworkManager.sendToPlayer(watcher, new SyncPayload(target.getId(), MutagenPlayer.of(target).snapshot()));
     }
@@ -153,9 +171,9 @@ public final class MutagenNetwork {
         NetworkManager.sendToPlayer(player, new StagePayload(stage.ordinal(), up, color));
     }
 
-    // --- Strains and knowledge ---
+    // --- Штаммы и знание ---
 
-    /** All loaded strains: on join and after {@code /reload}. */
+    /** Все загруженные штаммы: при входе и после {@code /reload}. */
     public static void sendStrains(ServerPlayer player) {
         List<CompoundTag> encoded = new ArrayList<>();
         for (Strain strain : Strains.all()) {
@@ -178,9 +196,9 @@ public final class MutagenNetwork {
         sendKnowledge(player, true, MutagenKnowledge.get(player.server).view(player.getUUID()));
     }
 
-    // --- Packets ---
+    // --- Пакеты ---
 
-    /** Mutation state of one player. */
+    /** Состояние мутации одного игрока. */
     public record SyncPayload(int entityId, List<MutagenData.Gene> genes) implements CustomPacketPayload {
         public static final CustomPacketPayload.Type<SyncPayload> TYPE =
                 new CustomPacketPayload.Type<>(Mutagen.id("sync"));
@@ -196,7 +214,7 @@ public final class MutagenNetwork {
         }
     }
 
-    /** Transition between stages: a screen flash and a sound. */
+    /** Переход между стадиями: вспышка на экране и звук. */
     public record StagePayload(int stage, boolean up, int color) implements CustomPacketPayload {
         public static final CustomPacketPayload.Type<StagePayload> TYPE =
                 new CustomPacketPayload.Type<>(Mutagen.id("stage"));
@@ -213,7 +231,7 @@ public final class MutagenNetwork {
         }
     }
 
-    /** Strains from the server's datapack: the client needs them for the color, name, appearance and gene tree. */
+    /** Штаммы из датапака сервера: клиенту они нужны для цвета, имени, облика и гено-древа. */
     public record StrainsPayload(List<CompoundTag> strains) implements CustomPacketPayload {
         public static final CustomPacketPayload.Type<StrainsPayload> TYPE =
                 new CustomPacketPayload.Type<>(Mutagen.id("strains"));
@@ -228,7 +246,7 @@ public final class MutagenNetwork {
         }
     }
 
-    /** Species research. {@code replace} — the full list, otherwise only the changed species. */
+    /** Изученность видов. {@code replace} — полный список, иначе только изменившиеся виды. */
     public record KnowledgePayload(boolean replace, Map<ResourceLocation, Float> entries)
             implements CustomPacketPayload {
         public static final CustomPacketPayload.Type<KnowledgePayload> TYPE =
@@ -247,7 +265,38 @@ public final class MutagenNetwork {
         }
     }
 
-    /** The client asks to lay out a recipe's ingredients on the biologist's workbench. */
+    /** Клиент просит разложить ингредиенты рецепта по верстаку биолога. */
+    /** Клиент просит применить способность под этим номером. */
+    public record UseAbilityPayload(int index) implements CustomPacketPayload {
+        public static final CustomPacketPayload.Type<UseAbilityPayload> TYPE =
+                new CustomPacketPayload.Type<>(Mutagen.id("use_ability"));
+
+        public static final StreamCodec<RegistryFriendlyByteBuf, UseAbilityPayload> STREAM_CODEC =
+                StreamCodec.composite(ByteBufCodecs.VAR_INT, UseAbilityPayload::index, UseAbilityPayload::new);
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+    }
+
+    /** Сервер подтверждает применение и называет длину перезарядки. */
+    public record AbilityUsedPayload(int index, int cooldown) implements CustomPacketPayload {
+        public static final CustomPacketPayload.Type<AbilityUsedPayload> TYPE =
+                new CustomPacketPayload.Type<>(Mutagen.id("ability_used"));
+
+        public static final StreamCodec<RegistryFriendlyByteBuf, AbilityUsedPayload> STREAM_CODEC =
+                StreamCodec.composite(
+                        ByteBufCodecs.VAR_INT, AbilityUsedPayload::index,
+                        ByteBufCodecs.VAR_INT, AbilityUsedPayload::cooldown,
+                        AbilityUsedPayload::new);
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+    }
+
     public record FillRecipePayload(ResourceLocation recipe) implements CustomPacketPayload {
         public static final CustomPacketPayload.Type<FillRecipePayload> TYPE =
                 new CustomPacketPayload.Type<>(Mutagen.id("fill_recipe"));

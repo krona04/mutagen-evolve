@@ -45,8 +45,8 @@ public class SynthesizerScreen extends MachineScreen<SynthesizerMenu> {
     }
 
     /**
-     * Why synthesis is stalled or what it will produce. Everything is computed from what the client already sees:
-     * slot contents, strains and its own research.
+     * Почему синтез стоит или чем он кончится. Всё считается из того, что клиент и так видит:
+     * содержимого слотов, штаммов и своей изученности.
      */
     @Nullable
     private Status status() {

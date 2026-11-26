@@ -37,11 +37,11 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Full form: at the fifth stage the creature's actual model is rendered instead of the player model.
+ * Полная форма: на пятой стадии вместо модели игрока рисуется настоящая модель существа.
  * <p>
- * Works without third-party libraries: the client keeps one "dummy" per species, every frame
- * transfers the player's pose onto it and hands it to the vanilla mob renderer. With all its layers —
- * armor, held item, the spider's glowing eyes and everything else the mod would otherwise have to replicate.
+ * Работает без сторонних библиотек: клиент держит по одному «манекену» на вид, каждый кадр
+ * переносит на него позу игрока и отдаёт ванильному рендеру моба. Со всеми его слоями —
+ * бронёй, предметом в руке, светящимися глазами паука и прочим, что мод не пришлось бы повторять.
  */
 @Environment(EnvType.CLIENT)
 public final class FullFormRenderer {
@@ -52,7 +52,7 @@ public final class FullFormRenderer {
     private FullFormRenderer() {
     }
 
-    /** The dummy for the player, if they are in full form. Otherwise null — the regular player is rendered. */
+    /** Манекен для игрока, если тот в полной форме. Иначе null — рисуется обычный игрок. */
     @Nullable
     public static LivingEntity dummyFor(Player player) {
         if (!MutagenConfig.get().fullFormRender) {
@@ -70,8 +70,8 @@ public final class FullFormRenderer {
     }
 
     /**
-     * The creature's texture — the one its own renderer picks. Needed by the hybrid stages
-     * so the creature parts on the player's body are the same color as the creature itself.
+     * Текстура существа — такая, какой её выбирает его собственный рендер. Нужна гибридным стадиям,
+     * чтобы части существа на теле игрока были того же цвета, что и само существо.
      */
     @Nullable
     @SuppressWarnings("unchecked")
@@ -103,12 +103,12 @@ public final class FullFormRenderer {
             DUMMIES.put(type, living);
             return living;
         }
-        // Not every entity can serve as a host: remember it so we don't retry every frame.
+        // Не всякая сущность годится в носители: запоминаем, чтобы не пробовать каждый кадр.
         FAILED.add(type);
         return null;
     }
 
-    /** Transfers onto the dummy everything the renderer builds the pose from. */
+    /** Переносит на манекен всё, из чего рендер собирает позу. */
     public static void copyState(Player player, LivingEntity dummy) {
         dummy.setPos(player.getX(), player.getY(), player.getZ());
         dummy.xo = player.xo;
@@ -145,13 +145,14 @@ public final class FullFormRenderer {
         }
 
         copyWalkAnimation(player, dummy);
+        net.krona.mutagen.client.body.CreatureMotion.apply(player, dummy);
     }
 
     /**
-     * First person in full form: the creature's arm is rendered instead of the human hand.
-     * Those without arms — a creeper, for example — render nothing, which is more honest than a human palm.
+     * Первое лицо в полной форме: вместо человеческой руки рисуется рука существа.
+     * У кого рук нет — у крипера, например, — не рисуется ничего, и это честнее человеческой ладони.
      *
-     * @return true if the first-person view has been taken over and the vanilla hand doesn't need to be rendered
+     * @return true, если вид от первого лица взят под управление и ванильную руку рисовать не нужно
      */
     @SuppressWarnings("unchecked")
     public static boolean renderFullFormHand(Player player, PoseStack poseStack, MultiBufferSource buffer,
@@ -167,7 +168,7 @@ public final class FullFormRenderer {
             return true;
         }
         if (!(livingRenderer.getModel() instanceof HumanoidModel<?> humanoid)) {
-            // A creature without arms: there should be none in first person.
+            // Существо без рук: в первом лице их быть не должно.
             return true;
         }
 
@@ -188,9 +189,9 @@ public final class FullFormRenderer {
     }
 
     /**
-     * Stages II–IV: first person keeps up with third person. The arm gets the same infection blotches
-     * as the body, and if the creature's arm has already grown on it, it is rendered on top.
-     * This pass doesn't touch the full form — the arm there already belongs to someone else.
+     * Стадии II–IV: первое лицо не отстаёт от третьего. На руку ложатся те же пятна заражения,
+     * что и на тело, а если на ней уже проросла рука существа — она рисуется поверх.
+     * Полную форму этот проход не трогает — там рука уже чужая.
      */
     public static void tintHand(AbstractClientPlayer player, PoseStack poseStack, MultiBufferSource buffer,
                                 int packedLight, ModelPart arm, ModelPart sleeve, boolean right) {
@@ -209,7 +210,7 @@ public final class FullFormRenderer {
 
         ResourceLocation skin = InfectionTextures.skin(player, strain, gene);
         if (skin != null) {
-            VertexConsumer consumer = buffer.getBuffer(RenderType.entityTranslucent(skin));
+            VertexConsumer consumer = buffer.getBuffer(RenderType.entityCutoutNoCullZOffset(skin));
             arm.render(poseStack, consumer, packedLight, OverlayTexture.NO_OVERLAY);
             sleeve.render(poseStack, consumer, packedLight, OverlayTexture.NO_OVERLAY);
         }

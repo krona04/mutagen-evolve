@@ -17,7 +17,7 @@ import net.krona.mutagen.menu.CentrifugeMenu;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Centrifuge: extracts a pure genome from a raw sample. Runs on regular fuel.
+ * Центрифуга: из сырого образца выделяет чистый геном. Работает на обычном топливе.
  */
 public class CentrifugeBlockEntity extends MachineBlockEntity {
     public static final int SLOT_INPUT = 0;
@@ -29,7 +29,7 @@ public class CentrifugeBlockEntity extends MachineBlockEntity {
         super(MutagenBlocks.CENTRIFUGE_ENTITY.get(), pos, state, 3, WORK_TIME);
     }
 
-    /** The centrifuge purifies the material but loses some of it. */
+    /** Центрифуга очищает материал, но часть его теряет. */
     public static ItemStack result(ItemStack input) {
         if (!input.is(MutagenItems.SAMPLE.get())) {
             return ItemStack.EMPTY;

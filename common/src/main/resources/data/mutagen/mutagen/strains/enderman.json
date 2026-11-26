@@ -1,0 +1,136 @@
+{
+  "entity": "minecraft:enderman",
+  "color": "#1E1428",
+  "difficulty": 5,
+  "synthesis": {
+    "catalyst": "minecraft:ender_pearl",
+    "catalyst_count": 2,
+    "time": 600
+  },
+  "body": {
+    "model_layer": "minecraft:enderman",
+    "spread": [
+      "head",
+      "right_arm",
+      "left_arm",
+      "body",
+      "right_leg",
+      "left_leg"
+    ],
+    "skin": "color",
+    "parts": [
+      {
+        "part": "head"
+      },
+      {
+        "part": "body"
+      },
+      {
+        "part": "right_arm"
+      },
+      {
+        "part": "left_arm"
+      },
+      {
+        "part": "right_leg"
+      },
+      {
+        "part": "left_leg"
+      }
+    ],
+    "height": 2.2,
+    "eye_height": 1.95,
+    "reach": 1,
+    "overlays": [
+      {
+        "texture": "minecraft:textures/entity/enderman/enderman_eyes.png",
+        "emissive": true
+      }
+    ]
+  },
+  "traits": [
+    {
+      "type": "mutagen:attribute",
+      "from_stage": "manifestation",
+      "attribute": "minecraft:generic.step_height",
+      "amount": 0.35
+    },
+    {
+      "type": "mutagen:attribute",
+      "from_stage": "mutation",
+      "attribute": "minecraft:generic.max_health",
+      "amount": 4
+    },
+    {
+      "type": "mutagen:water_damage",
+      "from_stage": "mutation",
+      "amount": 1,
+      "rain": true
+    },
+    {
+      "type": "mutagen:mob_neutrality",
+      "from_stage": "mutation",
+      "entities": [
+        "minecraft:enderman"
+      ]
+    },
+    {
+      "type": "mutagen:attribute",
+      "from_stage": "domination",
+      "attribute": "minecraft:generic.attack_damage",
+      "amount": 2
+    },
+    {
+      "type": "mutagen:damage_factor",
+      "from_stage": "domination",
+      "damage_type": "#minecraft:is_projectile",
+      "factor": 0.65
+    }
+  ],
+  "abilities": [
+    {
+      "type": "mutagen:blink",
+      "from_stage": "manifestation",
+      "name": "mutagen.ability.enderman.blink",
+      "cooldown": 160,
+      "cost": {
+        "hunger": 2
+      },
+      "range": 12
+    },
+    {
+      "type": "mutagen:hex",
+      "from_stage": "mutation",
+      "name": "mutagen.ability.enderman.stare",
+      "cooldown": 320,
+      "cost": {
+        "hunger": 2
+      },
+      "range": 14,
+      "effects": [
+        "minecraft:slowness",
+        "minecraft:weakness"
+      ],
+      "duration": 80,
+      "particle": "minecraft:portal"
+    },
+    {
+      "type": "mutagen:vortex",
+      "from_stage": "full",
+      "name": "mutagen.ability.enderman.collapse",
+      "cooldown": 1200,
+      "cost": {
+        "hunger": 5
+      },
+      "apex": true,
+      "radius": 7,
+      "pull": 1,
+      "damage": 4,
+      "duration": 60
+    }
+  ],
+  "vision": {
+    "shader": "minecraft:shaders/post/invert.json",
+    "from_stage": "manifestation"
+  }
+}

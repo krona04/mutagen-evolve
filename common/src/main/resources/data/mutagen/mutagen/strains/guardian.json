@@ -1,0 +1,160 @@
+{
+  "entity": "minecraft:guardian",
+  "color": "#5E9D96",
+  "difficulty": 6,
+  "synthesis": {
+    "catalyst": "minecraft:prismarine_crystals",
+    "catalyst_count": 2,
+    "time": 700
+  },
+  "body": {
+    "model_layer": "minecraft:guardian",
+    "spread": [
+      "body",
+      "head",
+      "right_arm",
+      "left_arm",
+      "right_leg",
+      "left_leg"
+    ],
+    "skin": "color",
+    "parts": [
+      {
+        "part": "head",
+        "bone": "body"
+      },
+      {
+        "part": "head/tail0",
+        "bone": "body",
+        "grow": true
+      }
+    ],
+    "absorb": [
+      "head",
+      "right_arm",
+      "left_arm",
+      "right_leg",
+      "left_leg"
+    ]
+  },
+  "traits": [
+    {
+      "type": "mutagen:thorns",
+      "from_stage": "manifestation",
+      "damage": 1
+    },
+    {
+      "type": "mutagen:attribute",
+      "from_stage": "manifestation",
+      "attribute": "minecraft:generic.water_movement_efficiency",
+      "amount": 1
+    },
+    {
+      "type": "mutagen:aquatic_body",
+      "from_stage": "mutation"
+    },
+    {
+      "type": "mutagen:water_dependence",
+      "from_stage": "domination"
+    },
+    {
+      "type": "mutagen:mob_neutrality",
+      "from_stage": "mutation",
+      "entities": [
+        "minecraft:guardian",
+        "minecraft:elder_guardian"
+      ]
+    },
+    {
+      "type": "mutagen:attribute",
+      "from_stage": "domination",
+      "attribute": "minecraft:generic.armor",
+      "amount": 4
+    },
+    {
+      "type": "mutagen:attribute",
+      "from_stage": "domination",
+      "attribute": "minecraft:generic.max_health",
+      "amount": 4
+    },
+    {
+      "type": "mutagen:attribute",
+      "from_stage": "domination",
+      "attribute": "minecraft:generic.movement_speed",
+      "amount": -0.2,
+      "operation": "add_multiplied_total"
+    },
+    {
+      "type": "mutagen:no_offhand",
+      "from_stage": "domination"
+    },
+    {
+      "type": "mutagen:no_tools",
+      "from_stage": "full"
+    },
+    {
+      "type": "mutagen:no_crafting",
+      "from_stage": "full"
+    },
+    {
+      "type": "mutagen:no_building",
+      "from_stage": "full"
+    },
+    {
+      "type": "mutagen:armor_rejection",
+      "from_stage": "full"
+    }
+  ],
+  "abilities": [
+    {
+      "type": "mutagen:reveal",
+      "from_stage": "manifestation",
+      "name": "mutagen.ability.guardian.sonar",
+      "cooldown": 240,
+      "cost": {
+        "hunger": 1
+      },
+      "radius": 20,
+      "duration": 100,
+      "requires": "water"
+    },
+    {
+      "type": "mutagen:hex",
+      "from_stage": "mutation",
+      "name": "mutagen.ability.guardian.beam",
+      "cooldown": 220,
+      "cost": {
+        "hunger": 2
+      },
+      "range": 16,
+      "damage": 6,
+      "particle": "minecraft:bubble",
+      "requires": "water"
+    },
+    {
+      "type": "mutagen:hex",
+      "from_stage": "full",
+      "name": "mutagen.ability.guardian.curse",
+      "cooldown": 1200,
+      "cost": {
+        "hunger": 5
+      },
+      "apex": true,
+      "range": 16,
+      "radius": 6,
+      "damage": 4,
+      "effects": [
+        "minecraft:mining_fatigue",
+        "minecraft:slowness"
+      ],
+      "duration": 140,
+      "amplifier": 1,
+      "particle": "minecraft:bubble",
+      "requires": "water"
+    }
+  ],
+  "vision": {
+    "shader": "mutagen:shaders/post/guardian.json",
+    "from_stage": "manifestation"
+  }
+}

@@ -27,11 +27,11 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Sequencer: reads a species' genome. Each run consumes a raw sample and a pinch of redstone
- * and adds a percentage of research — the purer the sample and the simpler the species, the more.
+ * Секвенатор: читает геном вида. Каждый прогон тратит сырой образец и щепотку редстоуна
+ * и добавляет процент изученности — чем чище образец и проще вид, тем больше.
  * <p>
- * A serum can't be synthesized without research, so every sample is a choice: study the species
- * or inject yourself with what you can already make.
+ * Сыворотку без изученности не синтезировать, поэтому каждый образец — выбор: изучать вид
+ * или колоть себе то, что уже умеешь делать.
  */
 public class SequencerBlockEntity extends MachineBlockEntity {
     public static final int SLOT_SAMPLE = 0;

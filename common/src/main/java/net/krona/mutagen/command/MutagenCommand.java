@@ -3,11 +3,14 @@ package net.krona.mutagen.command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.FloatArgumentType;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import dev.architectury.event.events.common.CommandRegistrationEvent;
 import net.krona.mutagen.Mutagen;
+import net.krona.mutagen.ability.Ability;
+import net.krona.mutagen.ability.AbilityUse;
 import net.krona.mutagen.data.MutagenData;
 import net.krona.mutagen.body.Bodies;
 import net.krona.mutagen.data.GeneData;
@@ -30,11 +33,13 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 
+import java.util.List;
+
 import java.util.Map;
 
 /**
- * Prototype debug commands: view the state, inject a dose, set progress.
- * Needed because the honest path to the fifth stage takes in-game days.
+ * Отладочные команды прототипа: посмотреть состояние, ввести дозу, выставить прогресс.
+ * Нужны, потому что честный путь до пятой стадии занимает игровые дни.
  */
 public final class MutagenCommand {
     private static final SuggestionProvider<CommandSourceStack> STRAIN_SUGGESTIONS =
@@ -77,6 +82,11 @@ public final class MutagenCommand {
                         .executes(MutagenCommand::lock)));
 
         root.then(Commands.literal("clear").executes(MutagenCommand::clear));
+
+        root.then(Commands.literal("abilities").executes(MutagenCommand::abilities));
+        root.then(Commands.literal("use")
+                .then(Commands.argument("index", IntegerArgumentType.integer(0, 15))
+                        .executes(MutagenCommand::use)));
 
         root.then(Commands.literal("research")
                 .executes(MutagenCommand::researchList)
@@ -178,7 +188,7 @@ public final class MutagenCommand {
         if (strain == null) {
             return 0;
         }
-        // A debug dose isn't capped by research: it is for testing the transformation, not the science.
+        // Отладочная доза не упирается в изученность: ей нужно проверять трансформацию, а не науку.
         Mutation.dose(player, strain.id(), quality, GeneData.NO_LIMIT);
         return 1;
     }
@@ -232,10 +242,38 @@ public final class MutagenCommand {
         return 1;
     }
 
+    /** Что умеет нынешний штамм и на какой стадии это открывается. */
+    private static int abilities(CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        List<Ability> abilities = AbilityUse.available(player);
+        if (abilities.isEmpty()) {
+            context.getSource().sendSuccess(() -> Component.translatable("mutagen.command.abilities.none"), false);
+            return 0;
+        }
+        for (int index = 0; index < abilities.size(); index++) {
+            Ability ability = abilities.get(index);
+            int number = index;
+            long left = AbilityUse.remaining(player, index);
+            context.getSource().sendSuccess(() -> Component.translatable("mutagen.command.abilities.entry",
+                    number, ability.name(), ability.minStage().displayName(),
+                    ability.apex() ? "apex" : "-", left / 20L), false);
+        }
+        return abilities.size();
+    }
+
+    /** Применить способность по номеру: то же, что нажать её клавишу. */
+    private static int use(CommandContext<CommandSourceStack> context)
+            throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        ServerPlayer player = context.getSource().getPlayerOrException();
+        AbilityUse.use(player, IntegerArgumentType.getInteger(context, "index"));
+        return 1;
+    }
+
     private static Strain strainArgument(CommandContext<CommandSourceStack> context) {
         ResourceLocation id = ResourceLocationArgument.getId(context, "strain");
         Strain strain = Strains.get(id);
-        // Short form: /mutagen set zombie 50 instead of mutagen:zombie.
+        // Короткая запись: /mutagen set zombie 50 вместо mutagen:zombie.
         if (strain == null && id.getNamespace().equals(ResourceLocation.DEFAULT_NAMESPACE)) {
             strain = Strains.get(Mutagen.id(id.getPath()));
         }

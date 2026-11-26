@@ -1,0 +1,182 @@
+{
+  "entity": "minecraft:bee",
+  "color": "#F2C230",
+  "difficulty": 3,
+  "synthesis": {
+    "catalyst": "minecraft:honeycomb",
+    "catalyst_count": 2,
+    "time": 400
+  },
+  "body": {
+    "model_layer": "minecraft:bee",
+    "spread": [
+      "body",
+      "head",
+      "right_arm",
+      "left_arm",
+      "right_leg",
+      "left_leg"
+    ],
+    "skin": "color",
+    "parts": [
+      {
+        "part": "bone/body",
+        "bone": "body"
+      },
+      {
+        "part": "bone/right_wing",
+        "bone": "body",
+        "grow": true
+      },
+      {
+        "part": "bone/left_wing",
+        "bone": "body",
+        "grow": true
+      },
+      {
+        "part": "bone/front_legs",
+        "bone": "body",
+        "grow": true
+      },
+      {
+        "part": "bone/middle_legs",
+        "bone": "body",
+        "grow": true
+      },
+      {
+        "part": "bone/back_legs",
+        "bone": "body",
+        "grow": true
+      }
+    ],
+    "eye_height": 0.42,
+    "absorb": [
+      "head",
+      "right_arm",
+      "left_arm",
+      "right_leg",
+      "left_leg"
+    ]
+  },
+  "traits": [
+    {
+      "type": "mutagen:mob_neutrality",
+      "from_stage": "manifestation",
+      "entities": [
+        "minecraft:bee"
+      ]
+    },
+    {
+      "type": "mutagen:growth_aura",
+      "from_stage": "manifestation",
+      "radius": 3,
+      "tries": 3
+    },
+    {
+      "type": "mutagen:attribute",
+      "from_stage": "mutation",
+      "attribute": "minecraft:generic.gravity",
+      "amount": -0.25,
+      "operation": "add_multiplied_total"
+    },
+    {
+      "type": "mutagen:attribute",
+      "from_stage": "mutation",
+      "attribute": "minecraft:generic.max_health",
+      "amount": -4
+    },
+    {
+      "type": "mutagen:damage_factor",
+      "from_stage": "mutation",
+      "damage_type": "#minecraft:is_fall",
+      "factor": 0.2
+    },
+    {
+      "type": "mutagen:flight",
+      "from_stage": "domination",
+      "speed": 0.045,
+      "exhaustion": 0.45,
+      "min_food": 8,
+      "rain": false
+    },
+    {
+      "type": "mutagen:diet",
+      "from_stage": "domination",
+      "foods": "#mutagen:sweet_foods"
+    },
+    {
+      "type": "mutagen:no_offhand",
+      "from_stage": "domination"
+    },
+    {
+      "type": "mutagen:no_tools",
+      "from_stage": "full"
+    },
+    {
+      "type": "mutagen:no_crafting",
+      "from_stage": "full"
+    },
+    {
+      "type": "mutagen:no_building",
+      "from_stage": "full"
+    },
+    {
+      "type": "mutagen:armor_rejection",
+      "from_stage": "full"
+    }
+  ],
+  "abilities": [
+    {
+      "type": "mutagen:leap",
+      "from_stage": "manifestation",
+      "name": "mutagen.ability.bee.flutter",
+      "cooldown": 140,
+      "cost": {
+        "hunger": 1
+      },
+      "power": 0.45,
+      "lift": 0.65,
+      "effects": [
+        "minecraft:slow_falling"
+      ],
+      "duration": 60,
+      "requires": "dry"
+    },
+    {
+      "type": "mutagen:hex",
+      "from_stage": "mutation",
+      "name": "mutagen.ability.bee.sting_attack",
+      "cooldown": 240,
+      "cost": {
+        "hunger": 1,
+        "health": 1
+      },
+      "range": 3,
+      "damage": 3,
+      "effects": [
+        "minecraft:poison"
+      ],
+      "duration": 80,
+      "particle": "minecraft:item_slime"
+    },
+    {
+      "type": "mutagen:rally",
+      "from_stage": "full",
+      "name": "mutagen.ability.bee.swarm",
+      "cooldown": 1400,
+      "cost": {
+        "hunger": 5
+      },
+      "apex": true,
+      "entities": [
+        "minecraft:bee"
+      ],
+      "radius": 20,
+      "duration": 400
+    }
+  ],
+  "vision": {
+    "shader": "mutagen:shaders/post/bee.json",
+    "from_stage": "manifestation"
+  }
+}

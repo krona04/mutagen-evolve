@@ -38,60 +38,50 @@
         "part": "left_leg"
       }
     ],
-    "morph": [
-      {
-        "bone": "right_arm",
-        "rotation": [
-          -75,
-          0,
-          0
-        ]
-      },
-      {
-        "bone": "left_arm",
-        "rotation": [
-          -75,
-          0,
-          0
-        ]
-      }
-    ],
     "reach": 0.5
   },
   "traits": [
     {
       "type": "mutagen:attribute",
       "from_stage": "manifestation",
-      "attribute": "minecraft:generic.attack_damage",
-      "amount": 2.0,
-      "description": "mutagen.trait.zombie.strength"
+      "attribute": "minecraft:generic.max_health",
+      "amount": 4
     },
     {
-      "type": "mutagen:dark_regeneration",
-      "from_stage": "manifestation"
+      "type": "mutagen:effect_immunity",
+      "from_stage": "manifestation",
+      "effects": [
+        "minecraft:hunger"
+      ]
     },
     {
       "type": "mutagen:attribute",
       "from_stage": "mutation",
-      "attribute": "minecraft:generic.max_health",
-      "amount": 4.0,
-      "description": "mutagen.trait.zombie.flesh"
+      "attribute": "minecraft:generic.attack_damage",
+      "amount": 2
     },
     {
-      "type": "mutagen:effect_immunity",
-      "from_stage": "mutation",
-      "effects": [
-        "minecraft:hunger"
-      ],
-      "description": "mutagen.trait.zombie.no_hunger"
+      "type": "mutagen:dark_regeneration",
+      "from_stage": "mutation"
     },
     {
       "type": "mutagen:attribute",
       "from_stage": "mutation",
       "attribute": "minecraft:generic.movement_speed",
-      "amount": -0.15,
-      "operation": "add_multiplied_total",
-      "description": "mutagen.trait.zombie.slow"
+      "amount": -0.12,
+      "operation": "add_multiplied_total"
+    },
+    {
+      "type": "mutagen:attribute",
+      "from_stage": "domination",
+      "attribute": "minecraft:generic.armor",
+      "amount": 2
+    },
+    {
+      "type": "mutagen:attribute",
+      "from_stage": "domination",
+      "attribute": "minecraft:generic.knockback_resistance",
+      "amount": 0.25
     },
     {
       "type": "mutagen:sun_burn",
@@ -99,20 +89,63 @@
     },
     {
       "type": "mutagen:no_sleep",
-      "from_stage": "mutation"
+      "from_stage": "domination"
     },
     {
       "type": "mutagen:diet",
-      "from_stage": "domination",
-      "foods": "#minecraft:meat",
-      "description": "mutagen.trait.zombie.meat_diet"
+      "from_stage": "full",
+      "foods": "#mutagen:meat",
+      "description": "mutagen.trait.gameplay.meat"
+    }
+  ],
+  "abilities": [
+    {
+      "type": "mutagen:effect_burst",
+      "from_stage": "manifestation",
+      "name": "mutagen.ability.zombie.endure",
+      "cooldown": 500,
+      "cost": {
+        "hunger": 2
+      },
+      "effects": [
+        "minecraft:regeneration",
+        "minecraft:resistance"
+      ],
+      "duration": 100
     },
     {
-      "type": "mutagen:no_crafting",
-      "from_stage": "domination",
-      "stations": "#mutagen:fine_work",
-      "grid": false,
-      "description": "mutagen.trait.zombie.clumsy"
+      "type": "mutagen:shockwave",
+      "from_stage": "mutation",
+      "name": "mutagen.ability.zombie.slam",
+      "cooldown": 280,
+      "cost": {
+        "hunger": 2
+      },
+      "radius": 3,
+      "damage": 4,
+      "knockback": 0.6,
+      "requires": "ground"
+    },
+    {
+      "type": "mutagen:rally",
+      "from_stage": "full",
+      "name": "mutagen.ability.zombie.horde",
+      "cooldown": 1400,
+      "cost": {
+        "hunger": 5
+      },
+      "apex": true,
+      "entities": [
+        "minecraft:zombie",
+        "minecraft:husk",
+        "minecraft:zombie_villager"
+      ],
+      "radius": 20,
+      "duration": 400
     }
-  ]
+  ],
+  "vision": {
+    "shader": "mutagen:shaders/post/zombie.json",
+    "from_stage": "manifestation"
+  }
 }

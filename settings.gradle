@@ -10,5 +10,7 @@ pluginManagement {
 rootProject.name = 'mutagen'
 
 include 'common'
-include 'fabric'
-include 'neoforge'
+// A single-loader build must not configure the other loader's Minecraft cache.
+providers.gradleProperty('enabled_platforms').getOrElse('fabric,neoforge').split(',').each { platform ->
+    include platform.trim()
+}

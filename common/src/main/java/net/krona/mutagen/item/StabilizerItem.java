@@ -19,8 +19,8 @@ import net.minecraft.world.level.Level;
 import java.util.List;
 
 /**
- * Stabilizer: locks in the strain's current level, and progress stops decaying on its own.
- * Applying it again removes the fixation.
+ * Стабилизатор: закрепляет текущий уровень штамма, и прогресс перестаёт откатываться сам.
+ * Повторное применение снимает фиксацию.
  */
 public class StabilizerItem extends Item {
     public StabilizerItem(Properties properties) {

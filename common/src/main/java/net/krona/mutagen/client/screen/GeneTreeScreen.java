@@ -3,6 +3,8 @@ package net.krona.mutagen.client.screen;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.krona.mutagen.client.MutagenClient;
+import net.krona.mutagen.ability.Ability;
+import net.krona.mutagen.ability.AbilityRequirement;
 import net.krona.mutagen.knowledge.ClientKnowledge;
 import net.krona.mutagen.knowledge.Research;
 import net.krona.mutagen.registry.MutagenItems;
@@ -32,10 +34,10 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Gene tree: catalog of encountered species and their genes.
+ * Гено-древо: каталог встреченных видов и их генов.
  * <p>
- * A species appears here with the first sample. While less than a quarter of the genome has been read, the genes are hidden:
- * the player sees that the creature has something but doesn't know what — which is the reason to go to the sequencer.
+ * Вид появляется здесь с первым образцом. Пока геном прочитан меньше чем на четверть, гены скрыты:
+ * игрок видит, что у существа что-то есть, но не знает что — это и есть повод идти к секвенатору.
  */
 @Environment(EnvType.CLIENT)
 public class GeneTreeScreen extends Screen {
@@ -71,7 +73,7 @@ public class GeneTreeScreen extends Screen {
         refresh();
     }
 
-    /** The list is rebuilt every frame: research may grow while the screen is open. */
+    /** Список пересобирается каждый кадр: изученность может вырасти, пока экран открыт. */
     private void refresh() {
         List<Strain> known = new ArrayList<>();
         for (ResourceLocation id : ClientKnowledge.all().keySet()) {
@@ -180,18 +182,51 @@ public class GeneTreeScreen extends Screen {
             y = wrap(graphics, line, x, y, textWidth, reached ? 0xFF7FD67F : MUTED);
         }
 
-        y += 4;
-        graphics.drawString(font, Component.translatable("mutagen.gene_tree.genes"), x, y, TEXT, true);
-        y += 11;
+        String roleKey = "mutagen.role." + strain.id().getPath();
+        if (net.minecraft.client.resources.language.I18n.exists(roleKey)) {
+            y = wrap(graphics, Component.translatable(roleKey), x, y + 5, textWidth, TEXT);
+        }
         if (Research.genesVisible(research)) {
-            for (Trait trait : strain.traits()) {
-                MutableComponent line = Component.literal("[" + trait.minStage().numeral() + "] ")
-                        .append(trait.description());
-                y = wrap(graphics, line, x, y, textWidth, trait.weakness() ? 0xFFE07070 : 0xFF7FD67F);
+            for (boolean weakness : new boolean[]{false, true}) {
+                int color = weakness ? 0xFFE07070 : 0xFF7FD67F;
+                y = wrap(graphics, Component.translatable(weakness
+                        ? "mutagen.gene_tree.restrictions" : "mutagen.gene_tree.advantages"),
+                        x, y + 5, textWidth, color);
+                for (Trait trait : strain.traits()) {
+                    if (trait.weakness() != weakness) continue;
+                    y = wrap(graphics, Component.literal("[" + trait.minStage().numeral() + "] ")
+                            .append(trait.description()), x, y, textWidth, color);
+                }
+            }
+            y = wrap(graphics, Component.translatable("mutagen.gene_tree.abilities"),
+                    x, y + 5, textWidth, TEXT);
+            for (int index = 0; index < strain.abilities().size(); index++) {
+                Ability ability = strain.abilities().get(index);
+                Component binding = ability.apex() ? MutagenClient.APEX_KEY.getTranslatedKeyMessage()
+                        : MutagenClient.ABILITY_KEYS[Math.min(index, 1)]
+                                .getTranslatedKeyMessage();
+                y = wrap(graphics, Component.literal("[" + ability.minStage().numeral() + "] ")
+                        .append(binding).append(" - ").append(ability.name()), x, y + 3, textWidth, TEXT);
+                String helpKey = "mutagen.ability_help." + strain.id().getPath() + "." + index;
+                if (net.minecraft.client.resources.language.I18n.exists(helpKey)) {
+                    y = wrap(graphics, Component.translatable(helpKey), x, y, textWidth, MUTED);
+                }
+                y = wrap(graphics, Component.translatable("mutagen.gene_tree.ability_cost",
+                        String.format("%.1f", ability.cooldown() / 20.0F),
+                        String.format("%.1f", ability.cost().hunger()),
+                        String.format("%.1f", ability.cost().health())), x, y, textWidth, MUTED);
+                if (ability.requirement() != AbilityRequirement.ANY) {
+                    y = wrap(graphics, Component.translatable(ability.requirement().key()),
+                            x, y, textWidth, 0xFFE4BD70);
+                }
+                if (ability.apex()) {
+                    y = wrap(graphics, Component.translatable("mutagen.gene_tree.apex_rule"),
+                            x, y, textWidth, 0xFFE4BD70);
+                }
             }
         } else {
             y = wrap(graphics, Component.translatable("mutagen.gene_tree.hidden", (int) Research.GENES),
-                    x, y, textWidth, MUTED);
+                    x, y + 5, textWidth, MUTED);
         }
 
         y += 4;

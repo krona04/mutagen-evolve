@@ -16,46 +16,65 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
- * Body shape transformation: the player's bones themselves become parts of the creature.
+ * Превращение формы тела: кости игрока сами становятся частями существа.
  * <p>
- * Every bone that has a counterpart in the creature's model ({@link MorphPlan}) smoothly takes on its size,
- * position in the body and initial tilt as it becomes infected. Everything is computed in shared model
- * coordinates, where the ground is at the same height for any mob, so the body neither floats nor sinks:
- * a creeper's legs get shorter, and the torso and head sink down to them along with it. Bones the
- * creature doesn't have retract into the body. On top of the shape, {@link BodyMotion} adds convulsions and twitches.
+ * Каждая кость, у которой есть пара в модели существа ({@link MorphPlan}), плавно принимает её размеры,
+ * место в теле и наклон — в той позе, в какой часть сейчас у живого существа, с его походкой. Всё
+ * считается в общих координатах модели, где у любого моба земля на одной высоте, поэтому тело не парит
+ * и не проваливается: паук опускается на лапы, волк встаёт на четвереньки, эндермен вытягивается.
  * <p>
- * The player model is shared by everyone, so before the vanilla animation the bones are reset to the initial pose
- * ({@link #resetPose}) — otherwise offsets would accumulate frame to frame and the body would start spinning.
- * The frame's result is stored ({@link Frame}): the creature's parts are fitted onto the same shape using it.
+ * Скелет перестраивается целиком: силуэт идёт за общим прогрессом, а кость, в которую зараза вошла
+ * раньше, лишь немного его опережает. Кожа существа, наоборот, расходится кость за костью. Кости,
+ * которых у существа нет, втягиваются в тело. Поверх формы {@link BodyMotion} добавляет судороги.
+ * <p>
+ * Модель игрока одна на всех, поэтому перед ванильной анимацией кости возвращаются в исходную позу
+ * ({@link #resetPose}) — иначе добавки копились бы от кадра к кадру и тело начинало бы вращаться.
+ * Итог кадра запоминается ({@link Frame}): по нему части существа ложатся на ту же форму.
  */
 @Environment(EnvType.CLIENT)
 public final class BodyMorph {
     private static final Frame FRAME = new Frame();
     /**
-     * The first-person arm is being rendered right now. There the arm is attached to the camera, not the body: it changes shape
-     * but doesn't leave the shoulder — otherwise an arm turning into a creeper leg would float up into the middle of the screen.
+     * Сейчас рисуется рука от первого лица. Там рука привязана к камере, а не к телу: форму она меняет,
+     * но с плеча не уходит — иначе рука, становящаяся ногой крипера, всплывала бы посреди экрана.
      */
     private static boolean firstPerson;
-    /** A bone that the transformation lowers below this (in model pixels) becomes a leg. */
+    /** Кость, которую превращение опускает ниже этого (в пикселях модели), становится ногой. */
     private static final float LEG_DROP = 8.0F;
-    /** How much a bone swells at the height of restructuring. */
+    /** Насколько кость набухает в разгар перестройки. */
     private static final float SWELL = 0.12F;
-    /** Tremor amplitude of a restructuring bone, in radians. */
+    /** Амплитуда дрожи перестраивающейся кости, в радианах. */
     private static final float TREMOR = 0.035F;
 
-    /** From which phase clothing falls off the bone. */
+    /** С какой фазы кости с неё спадает одежда, если части существа на ней нет. */
     private static final float CLOTHES_SHED = 0.5F;
-    /** From which phase the player's bone fully gives way to the creature's part. */
-    private static final float FULLY_TURNED = 0.98F;
+    /**
+     * С какого покрытия спадает одежда с кости, на которой проступает часть существа. Второй слой скина
+     * (волосы, куртка) выступает над костью и иначе закрывал бы шкуру существа — голова паука пряталась
+     * бы под причёской игрока.
+     */
+    private static final float CLOTHES_UNDER_CREATURE = 0.08F;
+    /**
+     * Насколько шкура существа опережает форму. Покрытие кости — наибольшее из её заражения и её формы,
+     * с этим множителем: когда кость на три четверти приняла форму части существа, она уже целиком в его
+     * шкуре, а не в коже игрока, натянутой на чужую форму.
+     */
+    private static final float COVER_LEAD = 1.35F;
+    /** С какой фазы кость игрока полностью уступает место части существа. */
+    private static final float FULLY_TURNED = MorphSurface.REPLACED;
 
     private BodyMorph() {
     }
 
-    /** Before the vanilla animation: initial pose and scale for all bones. */
+    /** Перед ванильной анимацией: исходная поза и масштаб для всех костей. */
     public static void resetPose(PlayerModel<?> model) {
         for (ModelPart part : bones(model)) {
             part.resetPose();
@@ -65,12 +84,21 @@ public final class BodyMorph {
         }
     }
 
-    /** After the vanilla animation: the mutant's shape, pose and movements. */
-    public static void apply(PlayerModel<?> model, LivingEntity entity) {
-        FRAME.clear(entity.getId());
+    /** Насколько силуэт следует за общим прогрессом, а не за заражением отдельной кости. */
+
+    /** Порядок перестройки: сначала корпус — втягивающиеся кости уходят к нему. */
+    private static final Strain.Bone[] ORDER = {Strain.Bone.BODY, Strain.Bone.HEAD, Strain.Bone.RIGHT_ARM,
+            Strain.Bone.LEFT_ARM, Strain.Bone.RIGHT_LEG, Strain.Bone.LEFT_LEG};
+
+    /** После ванильной анимации: форма, поза и движения мутанта. Параметры — те же, что у анимации игрока. */
+    public static void apply(PlayerModel<?> model, LivingEntity entity, float limbSwing, float limbSwingAmount,
+                             float ageInTicks, float netHeadYaw, float headPitch) {
+        // Модель пиглина — наследница модели игрока, и её анимацию, запущенную для превращения,
+        // этот хук тоже видит. Манекен существа — не игрок: кадр игрока он трогать не должен.
         if (!(entity instanceof Player player)) {
             return;
         }
+        FRAME.clear(entity.getId());
         MutagenData data = MutagenPlayer.of(player);
         MutagenData.Gene gene = data == null ? null : data.primary();
         Strain strain = gene == null ? null : Strains.get(gene.strainId());
@@ -79,55 +107,128 @@ public final class BodyMorph {
             return;
         }
 
-        if (MutagenConfig.get().bodyMorph) {
-            // Leg stride before any edits: an arm becoming a leg takes it over from the diagonally opposite leg.
-            float[] rightStep = {model.rightLeg.xRot, model.rightLeg.yRot, model.rightLeg.zRot};
-            float[] leftStep = {model.leftLeg.xRot, model.leftLeg.yRot, model.leftLeg.zRot};
-            // Pose first: the shape offset is computed from the bone's new tilt.
-            posture(model, strain, gene.progress());
-            MorphPlan plan = MorphPlan.of(strain);
+        MorphPlan plan = MorphPlan.of(strain);
+        MutagenConfig config = MutagenConfig.get();
+        if (config.bodyMorph || config.hybridRender) {
+            // Живое существо в позе этого кадра: к нему тянутся кости, на нём держатся выросшие части.
+            plan.animate(player, limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch);
             for (Strain.Bone bone : Strain.Bone.values()) {
-                float t = Infection.bonePhase(strain, bone, gene.progress());
-                if (t <= 0.0F) {
-                    continue;
-                }
-                ModelPart part = bone(model, bone);
-                if (plan.absorbed(bone)) {
-                    absorb(part, t);
-                    continue;
-                }
-                MorphPlan.Target target = plan.target(bone);
+                MorphPlan.Target target = config.bodyMorph && config.hybridRender && !firstPerson && ContinuousMorph.supports(strain)
+                        ? ContinuousMorph.target(strain, plan, bone) : plan.target(bone);
                 if (target != null) {
-                    float[] step = bone == Strain.Bone.RIGHT_ARM ? leftStep
-                            : bone == Strain.Bone.LEFT_ARM ? rightStep : null;
-                    reshape(bone, part, target, t, time(player) + bone.ordinal() * 7.3F, step);
+                    FRAME.goal[bone.ordinal()] = plan.pose(target);
+                }
+            }
+            for (MorphPlan.Target grown : plan.grown()) {
+                FRAME.grown.add(plan.pose(grown));
+            }
+        }
+
+        if (config.bodyMorph) {
+            posture(model, strain, gene.progress());
+            if (!firstPerson && !WolfMorph.supports(strain) && !CompactMorph.supports(strain)) MorphSequence.prepare(model, strain, gene.progress());
+            CompactMorph.Frame compact = !firstPerson && config.hybridRender && CompactMorph.supports(strain)
+                    ? new CompactMorph.Frame(model, strain.id().getPath(), gene.progress()) : null;
+
+            Vector3f core = null;
+            // Корпус до перестройки: от него считается, где у человека плечи, шея и бёдра.
+            Vector3f torsoPivot = new Vector3f(model.body.x, model.body.y, model.body.z);
+            Quaternionf torsoRotation = Poses.rotation(model.body);
+            Torso torso = null;
+            for (Strain.Bone bone : ORDER) {
+                float t = Infection.bonePhase(strain, bone, gene.progress());
+                float g = MorphSequence.phase(strain, bone, gene.progress());
+                if (MorphSequence.supports(strain)) t = g;
+                ModelPart part = bone(model, bone);
+                if (plan.absorbed(bone) && !(config.hybridRender && !firstPerson && ContinuousMorph.supports(strain))) {
+                    if (BeeMorph.supports(strain) && !firstPerson && torso != null) {
+                        BeeMorph.fold(part, bone, gene.progress(), torso.humanPivot(), torso.humanRotation(),
+                                torso.pivot(), torso.rotation(), FRAME.shape(Strain.Bone.BODY));
+                    } else {
+                        absorb(part, g, torso);
+                    }
+                    continue;
+                }
+                MorphPlan.Target target = config.bodyMorph && config.hybridRender && !firstPerson && ContinuousMorph.supports(strain)
+                        ? ContinuousMorph.target(strain, plan, bone) : plan.target(bone);
+                Matrix4f goal = FRAME.goal[bone.ordinal()];
+                if (target != null && goal != null) {
+                    if (ContinuousMorph.supports(strain) && config.hybridRender && !firstPerson) {
+                        WolfMorph.Pose staged;
+                        if (compact != null) {
+                            MorphCuboid.Core piece = MorphCuboid.core(target.model());
+                            MorphCuboid.Core bodyPiece = MorphCuboid.core(ContinuousMorph.target(strain, plan, Strain.Bone.BODY).model());
+                            staged = compact.reshape(bone, part, piece, goal, ContinuousMorph.surface(strain, bone, piece).box(),
+                                    bodyPiece, FRAME.goal(Strain.Bone.BODY));
+                        } else {
+                            staged = ContinuousMorph.reshape(strain, bone, part, MorphCuboid.core(target.model()), goal, gene.progress());
+                        }
+                        Vector3f pivot = staged.pivot();
+                        FRAME.put(bone, staged.material(), pivot.x, pivot.y, pivot.z, staged.shape(),
+                                (bone == Strain.Bone.RIGHT_ARM || bone == Strain.Bone.LEFT_ARM)
+                                        && Infection.overall(gene.progress()) >= 0.60F);
+                    } else if (BeeMorph.supports(strain) && !firstPerson && bone == Strain.Bone.BODY) {
+                        BeeMorph.Pose staged = BeeMorph.reshape(part, target, goal, gene.progress());
+                        Vector3f pivot = staged.pivot();
+                        FRAME.put(bone, staged.cover(), pivot.x, pivot.y, pivot.z, staged.shape(), false);
+                    } else if (SpiderMorph.supports(strain) && !firstPerson) {
+                        SpiderMorph.Pose staged = SpiderMorph.reshape(bone, part, target, goal, gene.progress());
+                        Vector3f pivot = staged.pivot();
+                        FRAME.put(bone, staged.cover(), pivot.x, pivot.y, pivot.z, staged.shape(),
+                                SpiderMorph.phase(gene.progress()) >= 0.64F);
+                    } else {
+                        reshape(bone, part, target, goal, g, t, time(player) + bone.ordinal() * 7.3F, torso);
+                    }
+                    if (bone == Strain.Bone.BODY) {
+                        float[] pivot = FRAME.pivot(bone);
+                        core = new Vector3f(pivot[0], pivot[1], pivot[2]);
+                        Box shape = FRAME.shape(bone);
+                        Vector3f center = shape == null ? new Vector3f(core)
+                                : rotate(model.body, shape.center()).add(core);
+                        torso = new Torso(torsoPivot, torsoRotation, Poses.pivot(goal),
+                                Poses.rotation(goal).mul(target.align()), core, Poses.rotation(model.body), center);
+                    }
                 }
             }
         }
 
         BodyMotion.apply(model, player, gene);
         copyOverlays(model);
-        if (MutagenConfig.get().bodyMorph) {
+        if (config.bodyMorph) {
             shed(model, strain, gene.progress());
+            if (ContinuousMorph.supports(strain) && config.hybridRender && !firstPerson) {
+                for (Strain.Bone bone : Strain.Bone.values()) {
+                    bone(model, bone).visible = false;
+                    overlay(model, bone).visible = false;
+                }
+            }
         }
     }
 
     /**
-     * Clothing (the second skin layer) falls off a bone once it has transformed halfway: from then on it has the creature's
-     * hide, and two layers of skin on top of each other would look like a bug. A fully transformed bone
-     * is hidden entirely — what remains is the creature's part, with all its gaps, like between a skeleton's ribs.
+     * Одежда (второй слой скина) спадает с кости, когда та превратилась наполовину: дальше на ней шкура
+     * существа, и два слоя кожи друг над другом выглядели бы как ошибка. Кость, превратившаяся до конца,
+     * прячется целиком — остаётся часть существа, со всеми её просветами, как между рёбрами скелета.
      */
     private static void shed(PlayerModel<?> model, Strain strain, float progress) {
         MorphPlan plan = MorphPlan.of(strain);
+        boolean hybrid = MutagenConfig.get().hybridRender;
         for (Strain.Bone bone : Strain.Bone.values()) {
             float t = Infection.bonePhase(strain, bone, progress);
-            if (t >= CLOTHES_SHED) {
+            boolean covered = hybrid && plan.target(bone) != null && FRAME.owner != Integer.MIN_VALUE;
+            float cover = covered ? FRAME.phase(bone) : t;
+            if (cover >= (covered ? CLOTHES_UNDER_CREATURE : CLOTHES_SHED)) {
                 overlay(model, bone).visible = false;
             }
-            if (t >= FULLY_TURNED && plan.target(bone) != null && MutagenConfig.get().hybridRender) {
+            if (covered && cover >= FULLY_TURNED) {
                 bone(model, bone).visible = false;
             }
         }
+    }
+
+    /** Покрытие кости шкурой существа: не отстаёт ни от заражения, ни от формы. */
+    private static float cover(float t, float g) {
+        return Mth.clamp(Math.max(t, g) * COVER_LEAD, 0.0F, 1.0F);
     }
 
     private static ModelPart overlay(PlayerModel<?> model, Strain.Bone bone) {
@@ -142,45 +243,81 @@ public final class BodyMorph {
     }
 
     /**
-     * The bone takes the shape of the creature's part: the pivot moves to its place in the body, the tilt to its
-     * initial tilt, and the bone's box stretches and shifts towards its box.
+     * Кость принимает форму части существа: точка поворота идёт к её месту в теле, наклон — к её
+     * наклону в этом кадре, а коробка кости растягивается к её коробке.
      * <p>
-     * As with a living body, none of this happens at once or in a straight line. The limb first moves forward,
-     * then drops, and only at the end pulls in sideways — this is how a creeper's arm becomes a front leg,
-     * going around the chest instead of through it. The bone's thickness changes before its length. While the bone
-     * is restructuring it swells and trembles slightly, and calms down towards the end.
+     * Длинная часть, лежащая поперёк кости (лапа паука вдоль X, тело пчелы вдоль Z), не сплющивается
+     * в брусок: кость сперва разворачивается вдоль неё ({@link MorphPlan.Target#align}), и дальше
+     * меняется только длина и толщина. Поэтому рука уходит в сторону лапой, а корпус ложится горизонтально.
+     * <p>
+     * Как у живого тела, всё идёт не разом и не по прямой. Кость сперва опускается вместе с укорачиванием,
+     * затем уходит вперёд или назад и лишь под конец подтягивается вбок. Толщина меняется раньше длины.
+     * Пока кость перестраивается ({@code t} — её собственное заражение), она набухает и мелко дрожит.
      */
-    private static void reshape(Strain.Bone bone, ModelPart part, MorphPlan.Target target, float t, float time,
-                                float[] step) {
+    private static void reshape(Strain.Bone bone, ModelPart part, MorphPlan.Target target, Matrix4f goal, float g,
+                                float t, float time, @Nullable Torso torso) {
         PartPose own = part.getInitialPose();
-        PartPose goal = target.pose();
-        boolean becomesLeg = goal.y - own.y > LEG_DROP;
-        if (becomesLeg && step != null) {
-            // An arm that has become a leg no longer swings like an arm or holds a grip pose: it steps
-            // in pair with the diagonally opposite leg, the way quadrupeds walk.
-            float gait = window(t, 0.15F, 0.70F);
-            part.xRot = Mth.lerp(gait, part.xRot, step[0]);
-            part.yRot = Mth.lerp(gait, part.yRot, step[1]);
-            part.zRot = Mth.lerp(gait, part.zRot, step[2]);
-        }
-        float travel = firstPerson ? 0.0F : 1.0F;
-        // First the body settles — the bone drops along the side as it shortens — and only then
-        // moves forward or back and pulls in under the torso. This way a creeper's arm doesn't stick forward like a zombie's.
-        float lengthPhase = window(t, 0.0F, 0.75F);
-        float pivotX = part.x + (goal.x - own.x) * window(t, 0.50F, 1.0F) * travel;
-        float pivotY = part.y + (goal.y - own.y) * lengthPhase * travel;
-        float pivotZ = part.z + (goal.z - own.z) * window(t, 0.35F, 1.0F) * travel;
-        float turn = window(t, 0.20F, 1.0F);
-        float active = Mth.sin(t * Mth.PI);
-        part.xRot += goal.xRot * turn + Mth.sin(time * 1.9F) * TREMOR * active;
-        part.yRot += goal.yRot * turn;
-        part.zRot += goal.zRot * turn + Mth.sin(time * 2.3F + 1.1F) * TREMOR * active;
+        Vector3f goalPivot = Poses.pivot(goal);
+        Quaternionf goalRotation = Poses.rotation(goal).mul(target.align());
+        Box goalBox = target.aligned().times(Poses.scale(goal));
+        boolean becomesLeg = goalPivot.y - own.y > LEG_DROP;
 
-        float thickness = window(t, 0.0F, 0.70F);
+        float travel = firstPerson ? 0.0F : 1.0F;
+        float lengthPhase = window(g, 0.0F, 0.75F);
+        float pivotX = part.x + (goalPivot.x - own.x) * window(g, 0.50F, 1.0F) * travel;
+        float pivotY = part.y + (goalPivot.y - own.y) * lengthPhase * travel;
+        float pivotZ = part.z + (goalPivot.z - own.z) * window(g, 0.35F, 1.0F) * travel;
+        // Конечности разворачиваются раньше, чем опускается корпус: лапы паука расходятся в стороны,
+        // пока тело ещё высоко, и тело садится на них, а не стоит на прямых ногах, как на ходулях.
+        boolean limb = bone != Strain.Bone.BODY && bone != Strain.Bone.HEAD;
+        float turn = limb ? window(g, 0.0F, 0.6F) : window(g, 0.15F, 1.0F);
+
+        float active = Mth.sin(g * Mth.PI) * (1.0F - window(g, 0.75F, 1.0F));
+        Vector3f[] centerTorso = null;
+        if (torso != null && !firstPerson) {
+            // Голова, руки и ноги держатся за корпус: где они у человека относительно него и где
+            // у существа — смешивается, а потом переносится на корпус в его нынешней позе. Наклонился
+            // корпус — плечи и шея ушли вместе с ним, а не остались висеть на прежнем месте.
+            // Наклон же конечности смешивается как есть, в мире: рука и у человека висит к земле,
+            // и передняя лапа волка смотрит в землю — пока корпус ложится, рука так и тянется вниз,
+            // а не падает вперёд вместе с ним.
+            Quaternionf humanInverse = new Quaternionf(torso.humanRotation()).conjugate();
+            Quaternionf creatureInverse = new Quaternionf(torso.creatureRotation()).conjugate();
+            Vector3f human = humanInverse.transform(new Vector3f(part.x, part.y, part.z).sub(torso.humanPivot()));
+            Vector3f creature = creatureInverse.transform(new Vector3f(goalPivot).sub(torso.creaturePivot()));
+            Vector3f pivot = torso.rotation().transform(human.lerp(creature, window(g, 0.0F, 0.9F)))
+                    .add(torso.pivot());
+            pivotX = pivot.x;
+            pivotY = pivot.y;
+            pivotZ = pivot.z;
+
+            Poses.setRotation(part, Poses.rotation(part).slerp(goalRotation, turn));
+        } else if (!firstPerson) {
+            // От позы игрока — к позе существа в этом кадре: к концу кость шагает его походкой.
+            Quaternionf before = Poses.rotation(part);
+            Poses.setRotation(part, new Quaternionf(before).slerp(goalRotation, turn));
+            if (bone == Strain.Bone.BODY) {
+                centerTorso = new Vector3f[]{rotate(before, Box.of(part).center()).add(part.x, part.y, part.z),
+                        goalRotation.transform(goalBox.center()).add(goalPivot)};
+            }
+        }
+        part.xRot += Mth.sin(time * 1.9F) * TREMOR * active;
+        part.zRot += Mth.sin(time * 2.3F + 1.1F) * TREMOR * active;
+
+        float thickness = window(g, 0.0F, 0.70F);
         float swell = 1.0F + SWELL * active;
-        // Attachment height and bone length change together: otherwise the feet would sink into the ground halfway through.
-        Box shape = Box.of(part).lerp(target.box(), thickness, lengthPhase, thickness)
+        // Высота крепления и длина кости меняются вместе: иначе ступни на середине пути уходили бы под землю.
+        Box shape = Box.of(part).lerp(goalBox, thickness, lengthPhase, thickness)
                 .scaled(swell, 1.0F + SWELL * 0.4F * active, swell);
+        if (centerTorso != null) {
+            // Корпус поворачивается вокруг своей середины, а не вокруг шеи: плечи уходят вперёд и вниз,
+            // таз — назад, как у человека, который сгибается, а не у доски, откинутой на петле.
+            Vector3f center = centerTorso[0].lerp(centerTorso[1], window(g, 0.0F, 1.0F));
+            Vector3f pivot = center.sub(rotate(part, shape.center()));
+            pivotX = pivot.x;
+            pivotY = pivot.y;
+            pivotZ = pivot.z;
+        }
         Box.Fit fit = Box.of(part).fit(shape);
         part.xScale = fit.scale().x();
         part.yScale = fit.scale().y();
@@ -190,10 +327,18 @@ public final class BodyMorph {
         part.y = pivotY + shift.y;
         part.z = pivotZ + shift.z;
 
-        FRAME.put(bone, t, pivotX, pivotY, pivotZ, shape, becomesLeg && t >= 0.5F);
+        FRAME.put(bone, cover(t, g), pivotX, pivotY, pivotZ, shape, becomesLeg && g >= 0.5F);
     }
 
-    /** The portion of the transformation falling into the window [from, to], with a smoothed start and end. */
+    /**
+     * Корпус в этом кадре: у человека до перестройки, у существа в цели и сейчас. Точки поворота —
+     * в пикселях модели, повороты — в координатах кости.
+     */
+    private record Torso(Vector3f humanPivot, Quaternionf humanRotation, Vector3f creaturePivot,
+                         Quaternionf creatureRotation, Vector3f pivot, Quaternionf rotation, Vector3f center) {
+    }
+
+    /** Часть превращения, пришедшаяся на окно [from, to], со сглаженным началом и концом. */
     private static float window(float t, float from, float to) {
         float x = Mth.clamp((t - from) / (to - from), 0.0F, 1.0F);
         return x * x * (3.0F - 2.0F * x);
@@ -204,15 +349,32 @@ public final class BodyMorph {
                 .getGameTimeDeltaPartialTick(true)) * 0.35F;
     }
 
-    /** Bones the creature doesn't have shrivel and retract into the body. */
-    private static void absorb(ModelPart part, float t) {
-        float scale = Math.max(0.001F, 1.0F - t);
+    /**
+     * Кости, которых у существа нет, усыхают и уходят в тело. Они держатся за корпус: наклонился он —
+     * наклонились и они, и с каждым шагом сидят к нему ближе, пока не скроются в нём. Голова пчелы
+     * не повисает в воздухе над опустившимся брюшком, а втягивается в него.
+     */
+    private static void absorb(ModelPart part, float g, @Nullable Torso torso) {
+        float scale = Math.max(0.001F, 1.0F - g);
         part.xScale = scale;
         part.yScale = scale;
         part.zScale = scale;
+        if (torso == null || firstPerson) {
+            return;
+        }
+        Quaternionf humanInverse = new Quaternionf(torso.humanRotation()).conjugate();
+        // Кость держится за корпус и одновременно уходит в его середину.
+        Vector3f relative = humanInverse.transform(new Vector3f(part.x, part.y, part.z).sub(torso.humanPivot()));
+        Vector3f pivot = torso.rotation().transform(relative).add(torso.pivot())
+                .lerp(torso.center(), window(g, 0.1F, 1.0F));
+        part.x = pivot.x;
+        part.y = pivot.y;
+        part.z = pivot.z;
+        Quaternionf rotation = humanInverse.mul(Poses.rotation(part), new Quaternionf());
+        Poses.setRotation(part, new Quaternionf(torso.rotation()).mul(rotation));
     }
 
-    /** Pose from the strain data: bone rotation in degrees, e.g. a zombie's arms stretched forward. */
+    /** Поза из данных штамма: поворот кости в градусах, например вытянутые вперёд руки зомби. */
     private static void posture(PlayerModel<?> model, Strain strain, float progress) {
         for (Strain.Morph morph : strain.body().morph()) {
             float t = Infection.bonePhase(strain, morph.bone(), progress);
@@ -226,12 +388,16 @@ public final class BodyMorph {
         }
     }
 
-    /** Offset in part coordinates → pivot offset in parent coordinates. */
+    /** Сдвиг в координатах части → сдвиг точки поворота в координатах родителя. */
     public static Vector3f rotate(ModelPart part, Vector3f local) {
         return new Quaternionf().rotationZYX(part.zRot, part.yRot, part.xRot).transform(new Vector3f(local));
     }
 
-    /** Clothing layers follow the bones: vanilla copies them before the strain gets to change the bone. */
+    private static Vector3f rotate(Quaternionf rotation, Vector3f local) {
+        return rotation.transform(new Vector3f(local));
+    }
+
+    /** Слои одежды повторяют кости: ваниль копирует их раньше, чем штамм успевает кость изменить. */
     private static void copyOverlays(PlayerModel<?> model) {
         model.hat.copyFrom(model.head);
         model.jacket.copyFrom(model.body);
@@ -261,15 +427,15 @@ public final class BodyMorph {
         firstPerson = value;
     }
 
-    /** This player's last-frame shape, if it has already been computed. */
+    /** Форма последнего кадра этого игрока, если она уже посчитана. */
     @Nullable
     public static Frame frame(Player player) {
         return FRAME.owner == player.getId() ? FRAME : null;
     }
 
     /**
-     * The transformation result for a frame: for each bone — the phase, the pivot before the box offset, and the box
-     * the bone currently occupies. The creature's part is fitted into the same box, and the surfaces line up.
+     * Итог превращения за кадр: для каждой кости — фаза, точка поворота до сдвига коробки и коробка,
+     * которую кость сейчас занимает. Часть существа вписывается в ту же коробку, и поверхности совпадают.
      */
     public static final class Frame {
         private int owner = Integer.MIN_VALUE;
@@ -277,12 +443,28 @@ public final class BodyMorph {
         private final float[][] pivot = new float[Strain.Bone.values().length][3];
         private final Box[] shape = new Box[Strain.Bone.values().length];
         private final boolean[] leg = new boolean[Strain.Bone.values().length];
+        /** Поза части существа в этом кадре — куда тянется кость. В блоках, в координатах модели игрока. */
+        private final Matrix4f[] goal = new Matrix4f[Strain.Bone.values().length];
+        /** Позы выросших частей в этом кадре, по порядку {@link MorphPlan#grown()}. */
+        private final List<Matrix4f> grown = new ArrayList<>();
 
         private void clear(int entity) {
             owner = entity;
             java.util.Arrays.fill(phase, 0.0F);
             java.util.Arrays.fill(shape, null);
             java.util.Arrays.fill(leg, false);
+            java.util.Arrays.fill(goal, null);
+            grown.clear();
+        }
+
+        @Nullable
+        public Matrix4f goal(Strain.Bone bone) {
+            return goal[bone.ordinal()];
+        }
+
+        @Nullable
+        public Matrix4f grown(int index) {
+            return index < grown.size() ? grown.get(index) : null;
         }
 
         private void put(Strain.Bone bone, float t, float x, float y, float z, Box box, boolean becameLeg) {
@@ -299,7 +481,7 @@ public final class BodyMorph {
             return phase[bone.ordinal()];
         }
 
-        /** The arm is already more leg than arm: an item can't be held in it or rendered. */
+        /** Рука уже больше нога, чем рука: предмет в ней не удержать и не нарисовать. */
         public boolean becameLeg(Strain.Bone bone) {
             return leg[bone.ordinal()];
         }

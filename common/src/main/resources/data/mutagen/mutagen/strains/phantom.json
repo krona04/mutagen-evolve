@@ -1,0 +1,179 @@
+{
+  "entity": "minecraft:phantom",
+  "color": "#3D5A8A",
+  "difficulty": 3,
+  "synthesis": {
+    "catalyst": "minecraft:phantom_membrane",
+    "catalyst_count": 1,
+    "time": 500
+  },
+  "body": {
+    "model_layer": "minecraft:phantom",
+    "spread": [
+      "body",
+      "right_arm",
+      "left_arm",
+      "head",
+      "right_leg",
+      "left_leg"
+    ],
+    "skin": "color",
+    "parts": [
+      {
+        "part": "body"
+      },
+      {
+        "part": "body/head",
+        "bone": "head"
+      },
+      {
+        "part": "body/right_wing_base",
+        "bone": "right_arm"
+      },
+      {
+        "part": "body/left_wing_base",
+        "bone": "left_arm"
+      },
+      {
+        "part": "body/tail_base",
+        "bone": "body",
+        "grow": true
+      }
+    ],
+    "width": 0.9,
+    "height": 0.9,
+    "eye_height": 0.55,
+    "absorb": [
+      "right_leg",
+      "left_leg"
+    ],
+    "overlays": [
+      {
+        "texture": "minecraft:textures/entity/phantom_eyes.png",
+        "emissive": true
+      }
+    ]
+  },
+  "traits": [
+    {
+      "type": "mutagen:attribute",
+      "from_stage": "manifestation",
+      "attribute": "minecraft:generic.gravity",
+      "amount": -0.2,
+      "operation": "add_multiplied_total"
+    },
+    {
+      "type": "mutagen:attribute",
+      "from_stage": "mutation",
+      "attribute": "minecraft:generic.gravity",
+      "amount": -0.15,
+      "operation": "add_multiplied_total"
+    },
+    {
+      "type": "mutagen:attribute",
+      "from_stage": "mutation",
+      "attribute": "minecraft:generic.max_health",
+      "amount": -4
+    },
+    {
+      "type": "mutagen:permanent_effect",
+      "from_stage": "mutation",
+      "effect": "minecraft:night_vision"
+    },
+    {
+      "type": "mutagen:mob_neutrality",
+      "from_stage": "mutation",
+      "entities": [
+        "minecraft:phantom"
+      ]
+    },
+    {
+      "type": "mutagen:flight",
+      "from_stage": "domination",
+      "speed": 0.065,
+      "exhaustion": 0.5,
+      "min_food": 8,
+      "rain": false
+    },
+    {
+      "type": "mutagen:sun_burn",
+      "from_stage": "domination"
+    },
+    {
+      "type": "mutagen:armor_rejection",
+      "from_stage": "domination",
+      "slots": [
+        "chest"
+      ]
+    },
+    {
+      "type": "mutagen:no_offhand",
+      "from_stage": "domination"
+    },
+    {
+      "type": "mutagen:no_tools",
+      "from_stage": "full"
+    },
+    {
+      "type": "mutagen:no_crafting",
+      "from_stage": "full"
+    },
+    {
+      "type": "mutagen:no_building",
+      "from_stage": "full"
+    },
+    {
+      "type": "mutagen:armor_rejection",
+      "from_stage": "full"
+    }
+  ],
+  "abilities": [
+    {
+      "type": "mutagen:leap",
+      "from_stage": "manifestation",
+      "name": "mutagen.ability.phantom.flap",
+      "cooldown": 160,
+      "cost": {
+        "hunger": 1.5
+      },
+      "power": 0.8,
+      "lift": 0.65,
+      "effects": [
+        "minecraft:slow_falling"
+      ],
+      "duration": 60
+    },
+    {
+      "type": "mutagen:effect_burst",
+      "from_stage": "mutation",
+      "name": "mutagen.ability.phantom.nightveil",
+      "cooldown": 500,
+      "cost": {
+        "hunger": 2
+      },
+      "effects": [
+        "minecraft:invisibility"
+      ],
+      "duration": 100,
+      "requires": "dark"
+    },
+    {
+      "type": "mutagen:lunge",
+      "from_stage": "full",
+      "name": "mutagen.ability.phantom.dive",
+      "cooldown": 900,
+      "cost": {
+        "hunger": 4
+      },
+      "apex": true,
+      "range": 10,
+      "power": 1.6,
+      "damage": 9,
+      "requires": "airborne"
+    }
+  ],
+  "vision": {
+    "shader": "mutagen:shaders/post/phantom.json",
+    "from_stage": "manifestation"
+  }
+}

@@ -14,14 +14,14 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * A body that doesn't fully obey its owner.
+ * Тело, которое не до конца слушается хозяина.
  * <p>
- * <b>Convulsions.</b> Moving to a new stage is a breaking: for a couple of seconds the body twists, the head jerks,
- * the arms shake, and the tremor fades. Everyone looking at the host sees it, not just the host.
+ * <b>Судороги.</b> Переход на новую стадию — это ломка: пару секунд тело выкручивает, голова дёргается,
+ * руки ходят ходуном, и дрожь затухает. Видят это все, кто смотрит на носителя, а не только он сам.
  * <p>
- * <b>Twitches.</b> From stage III, every few seconds one bone twitches briefly and sharply
- * on its own — more often and harder at IV. The schedule comes from the player's UUID, so each host
- * has their own rhythm, identical on all clients.
+ * <b>Подёргивания.</b> Со стадии III раз в несколько секунд одна кость коротко и резко дёргается
+ * сама по себе — на IV чаще и сильнее. Расписание берётся из UUID игрока, поэтому у каждого носителя
+ * свой ритм, одинаковый на всех клиентах.
  */
 @Environment(EnvType.CLIENT)
 public final class BodyMotion {
@@ -31,7 +31,7 @@ public final class BodyMotion {
     private BodyMotion() {
     }
 
-    /** The stage has increased: start convulsions for this player. */
+    /** Стадия выросла: запустить судороги у этого игрока. */
     public static void startConvulsion(Player player) {
         CONVULSIONS.put(player.getId(), gameTime());
     }
@@ -41,11 +41,16 @@ public final class BodyMotion {
             return;
         }
         float time = player.tickCount + Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(true);
-        convulse(model, player, time);
-        twitch(model, player, gene.stage());
+        var strain = net.krona.mutagen.strain.Strains.get(gene.strainId());
+        float weight = strain != null && MutagenConfig.get().bodyMorph
+                ? 1.0F - SpiderMorph.window(SpiderMorph.phase(gene.progress()), 0.60F, 0.95F) : 1.0F;
+        if (strain != null && MutagenConfig.get().bodyMorph && CompactMorph.supports(strain))
+            weight *= 0.15F * (1.0F - CompactMorph.prepare(gene.progress()));
+        convulse(model, player, time, weight);
+        twitch(model, player, gene.stage(), weight);
     }
 
-    private static void convulse(PlayerModel<?> model, Player player, float time) {
+    private static void convulse(PlayerModel<?> model, Player player, float time, float weight) {
         Long start = CONVULSIONS.get(player.getId());
         if (start == null) {
             return;
@@ -56,7 +61,7 @@ public final class BodyMotion {
             return;
         }
         float strength = 1.0F - age / (float) CONVULSION_TICKS;
-        strength *= strength;
+        strength *= strength * weight;
         model.head.xRot += Mth.sin(time * 2.9F) * 0.22F * strength;
         model.head.yRot += Mth.sin(time * 2.1F + 1.3F) * 0.18F * strength;
         model.head.zRot += Mth.sin(time * 3.7F) * 0.12F * strength;
@@ -70,9 +75,9 @@ public final class BodyMotion {
     }
 
     /**
-     * One twitch per window of {@code period} ticks: the moment and the bone are chosen by a hash of the UUID and the window index.
+     * Одно подёргивание за окно в {@code period} тиков: момент и кость выбираются хешем от UUID и номера окна.
      */
-    private static void twitch(PlayerModel<?> model, Player player, Stage stage) {
+    private static void twitch(PlayerModel<?> model, Player player, Stage stage, float weight) {
         if (!stage.atLeast(Stage.MUTATION)) {
             return;
         }
@@ -87,8 +92,8 @@ public final class BodyMotion {
         if (inside < 0 || inside >= length) {
             return;
         }
-        // A sharp jerk and release: a sine over a half period.
-        float amount = Mth.sin((inside / (float) length) * Mth.PI) * (strong ? 0.30F : 0.18F);
+        // Резкий рывок и спад: синус по полупериоду.
+        float amount = Mth.sin((inside / (float) length) * Mth.PI) * (strong ? 0.30F : 0.18F) * weight;
         float sign = (hash & 1L) == 0 ? 1.0F : -1.0F;
         switch ((int) Math.floorMod(hash >>> 8, 3)) {
             case 0 -> model.head.xRot += amount * 0.8F;

@@ -6,44 +6,74 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.entity.ai.attributes.Attribute;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.item.ItemStack;
 
 /**
- * Strain trait: something the strain gives to or takes away from the host.
+ * Черта штамма: то, что штамм даёт или отнимает у носителя.
  * <p>
- * Since 0.2 traits are read from the datapack: each one has a {@link TraitType} that knows its JSON format.
+ * С 0.2 черты читаются из датапака: у каждой есть {@link TraitType}, который знает её JSON-формат.
  */
 public interface Trait {
-    /** Trait type — the trait is written to JSON and recognized on reading by it. */
+    /** Тип черты — по нему черта пишется в JSON и узнаётся при чтении. */
     TraitType<?> type();
 
-    /** The stage from which the trait takes effect. */
+    /** Стадия, начиная с которой черта работает. */
     Stage minStage();
 
-    /** Short description for tooltips and the gene tree. */
+    /** Короткое описание для подсказок и гено-древа. */
     Component description();
 
-    /** Weakness or strength. The gene tree paints weaknesses red, strengths green. */
+    /** Слабость или сила. Гено-древо красит слабости красным, силы — зелёным. */
     default boolean weakness() {
         return false;
     }
 
-    /** Once per second on the server, while the stage is not below {@link #minStage()}. */
+    /** Раз в секунду на сервере, пока стадия не ниже {@link #minStage()}. */
     default void tick(ServerPlayer player, Stage stage) {
     }
 
-    /** Permanent attribute modifiers. Rebuilt on every stage change. */
+    /** Постоянные модификаторы атрибутов. Пересобираются при каждой смене стадии. */
     default void attributes(Stage stage, AttributeSink sink) {
     }
 
-    /** Incoming damage multiplier: weaknesses and immunities. */
+    /** Множитель входящего урона: слабости и иммунитеты. */
     default float modifyIncomingDamage(DamageSource source, float amount, Stage stage) {
         return amount;
     }
 
-    /** Effect immunity. */
+    /** Признаёт ли этот вид носителя своим и перестаёт ли на него нападать. */
+    default boolean pacifies(net.minecraft.world.entity.EntityType<?> kind, Stage stage) {
+        return false;
+    }
+
+    /** Иммунитет к эффектам. */
     default boolean blocksEffect(Holder<MobEffect> effect, Stage stage) {
         return false;
+    }
+
+    /** Лазает ли носитель по стенам. Спрашивается на обеих сторонах: движение считает клиент. */
+    default boolean climbs(Stage stage) {
+        return false;
+    }
+
+    /** Проходит ли носитель сквозь паутину, не застревая. Тоже на обеих сторонах. */
+    default boolean walksThroughWebs(Stage stage) {
+        return false;
+    }
+
+    /** Не отдаёт этот предмет: выбросить его из инвентаря нельзя. */
+    default boolean hoards(ItemStack stack, Stage stage) {
+        return false;
+    }
+
+    /** Носитель ударил кого-то в ближнем бою. Только сервер. */
+    default void onMeleeHit(ServerPlayer player, LivingEntity target, Stage stage) {
+    }
+
+    /** Носителя ударили в ближнем бою. Только сервер. */
+    default void onMeleeHurt(ServerPlayer player, LivingEntity attacker, Stage stage) {
     }
 
     @FunctionalInterface

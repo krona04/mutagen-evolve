@@ -38,7 +38,7 @@ public class SequencerMenu extends MachineMenu {
         addPlayerInventory(inventory);
     }
 
-    /** The sample in the slot: the screen uses it to show which species is being read. */
+    /** Образец в слоте: экран по нему показывает, какой вид сейчас читается. */
     public ItemStack sample() {
         return container.getItem(SequencerBlockEntity.SLOT_SAMPLE);
     }

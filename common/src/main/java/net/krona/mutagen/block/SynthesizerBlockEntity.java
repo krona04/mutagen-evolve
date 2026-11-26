@@ -24,12 +24,12 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Synthesizer: genome + mutagenic base + catalyst yield a serum.
- * Needs no fuel — the reagents themselves are the price.
+ * Синтезатор: геном + мутагенная основа + катализатор дают сыворотку.
+ * Топлива не требует — платой служат сами реагенты.
  * <p>
- * Since 0.2 synthesis requires species research: below 25% it is impossible, and the serum's cap
- * is set by the threshold (40 / 70 / 100%). The cost of synthesis — the catalyst, its amount and the time —
- * comes from the strain data (0.2.1), and a pure genome from 85% yields two ampoules.
+ * С 0.2 синтез требует изученности вида: ниже 25% он невозможен, а потолок сыворотки
+ * задаётся порогом (40 / 70 / 100%). Цена синтеза — катализатор, его количество и время —
+ * берётся из данных штамма (0.2.1), а чистый геном от 85% даёт две ампулы.
  */
 public class SynthesizerBlockEntity extends MachineBlockEntity {
     public static final int SLOT_GENOME = 0;
@@ -41,7 +41,7 @@ public class SynthesizerBlockEntity extends MachineBlockEntity {
         super(MutagenBlocks.SYNTHESIZER_ENTITY.get(), pos, state, 4, Strain.Synthesis.DEFAULT.time());
     }
 
-    /** How many ampoules a genome of this purity yields. */
+    /** Сколько ампул даёт геном такой чистоты. */
     public static int serumYield(float purity) {
         return purity >= MutagenConfig.get().doubleSerumPurity ? 2 : 1;
     }
@@ -119,7 +119,7 @@ public class SynthesizerBlockEntity extends MachineBlockEntity {
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
-        // Synthesis time depends on the strain in the slot and is recalculated on the very first tick.
+        // Время синтеза зависит от штамма в слоте и пересчитывается в первом же тике.
         if (tag.contains("MaxProgress")) {
             maxProgress = Math.max(1, tag.getInt("MaxProgress"));
         }

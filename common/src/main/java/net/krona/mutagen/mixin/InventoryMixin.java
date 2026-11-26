@@ -13,8 +13,8 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
- * Picked-up items don't go into locked slots: item pickup and return look for space only where
- * the host can still reach.
+ * Подобранные вещи не попадают в запертые ячейки: подбор и возврат предметов ищут место только там,
+ * куда носитель ещё может дотянуться.
  */
 @Mixin(Inventory.class)
 public abstract class InventoryMixin {

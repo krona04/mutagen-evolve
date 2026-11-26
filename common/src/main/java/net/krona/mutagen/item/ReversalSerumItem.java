@@ -18,8 +18,8 @@ import net.minecraft.world.level.Level;
 import java.util.List;
 
 /**
- * Antimutagen: rolls progress back by 15%. Painful — and that's intended.
- * Milk doesn't remove the transformation, otherwise the whole system would be devalued.
+ * Антимутаген: откатывает прогресс на 15%. Болезненно — и так и задумано.
+ * Молоко трансформацию не снимает, иначе вся система обесценивается.
  */
 public class ReversalSerumItem extends Item {
     private static final float STEP = 15.0F;

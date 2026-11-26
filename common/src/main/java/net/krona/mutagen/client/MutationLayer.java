@@ -26,13 +26,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Gradual transformation visuals.
+ * Постепенный визуал трансформации.
  * <p>
- * Stage I shows nothing: the changes are only heard and felt. From stage II, blotches of creature flesh
- * spread across the skin from the injection site ({@link InfectionTextures}), from stage III the eyes start glowing
- * and parts of the creature itself grow out ({@link HybridRenderer}). Proportions and posture are changed by
- * {@link net.krona.mutagen.client.body.BodyMorph}. The player's skin doesn't disappear until the full form:
- * their own skin remains between the blotches.
+ * Стадия I ничего не показывает: изменения только на слух и на ощупь. Со стадии II по коже от места укола
+ * расползаются пятна плоти существа ({@link InfectionTextures}), со стадии III начинают светиться глаза
+ * и прорастают части самого существа ({@link HybridRenderer}). Пропорции и осанку меняет
+ * {@link net.krona.mutagen.client.body.BodyMorph}. Скин игрока не пропадает до полной формы:
+ * между пятнами остаётся его собственная кожа.
  */
 @Environment(EnvType.CLIENT)
 public class MutationLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> {
@@ -46,7 +46,7 @@ public class MutationLayer extends RenderLayer<AbstractClientPlayer, PlayerModel
     public void render(PoseStack pose, MultiBufferSource buffer, int packedLight, AbstractClientPlayer player,
                        float limbSwing, float limbSwingAmount, float partialTick, float ageInTicks,
                        float netHeadYaw, float headPitch) {
-        if (player.isInvisible() || IrisCompat.isShadowPass()) {
+        if (player.isInvisible()) {
             return;
         }
 
@@ -66,10 +66,16 @@ public class MutationLayer extends RenderLayer<AbstractClientPlayer, PlayerModel
         }
 
         PlayerModel<AbstractClientPlayer> model = getParentModel();
+        if (net.krona.mutagen.MutagenConfig.get().bodyMorph && net.krona.mutagen.MutagenConfig.get().hybridRender
+                && net.krona.mutagen.client.body.ContinuousMorph.supports(strain) && stage != Stage.FULL) {
+            HybridRenderer.renderBody(model, player, gene, strain, pose, buffer, packedLight);
+            return;
+        }
+        if (IrisCompat.isShadowPass()) return;
         ResourceLocation skin = InfectionTextures.skin(player, strain, gene);
         if (skin != null) {
-            // Same geometry as the skin: infected pixels land exactly on the skin and on the clothing.
-            model.renderToBuffer(pose, buffer.getBuffer(RenderType.entityTranslucent(skin)), packedLight,
+            // Та же геометрия, что и у скина: заражённые пиксели ложатся ровно на кожу и на одежду.
+            model.renderToBuffer(pose, buffer.getBuffer(RenderType.entityCutoutNoCullZOffset(skin)), packedLight,
                     OverlayTexture.NO_OVERLAY, -1);
         }
 
@@ -83,8 +89,8 @@ public class MutationLayer extends RenderLayer<AbstractClientPlayer, PlayerModel
     }
 
     /**
-     * Not every strain has glowing eyes: a strain from a third-party datapack may lack an eyes texture,
-     * and the black-and-purple placeholder must not be drawn in its place.
+     * Светящиеся глаза есть не у каждого штамма: у штамма из чужого датапака текстуры глаз может не быть,
+     * и вместо неё нельзя рисовать чёрно-фиолетовую заглушку.
      */
     private static boolean hasTexture(ResourceLocation texture) {
         return EYES.computeIfAbsent(texture,

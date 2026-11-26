@@ -5,15 +5,17 @@ import net.fabricmc.api.Environment;
 import net.krona.mutagen.mixin.client.ModelPartAccessor;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.model.geom.PartPose;
+import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.WeakHashMap;
 
 /**
- * Bounds of a model part in its own coordinates (in model pixels, from the pivot).
- * Computed from the cubes of the part and its children; children's rotations are ignored — for estimating a limb's
- * shape that is enough.
+ * Габариты части модели в её собственных координатах (в пикселях модели, от точки поворота).
+ * Считаются по кубам части и её потомков; повороты потомков не учитываются — для оценки формы
+ * конечности этого достаточно.
  */
 @Environment(EnvType.CLIENT)
 public record Box(float minX, float minY, float minZ, float maxX, float maxY, float maxZ) {
@@ -31,7 +33,28 @@ public record Box(float minX, float minY, float minZ, float maxX, float maxY, fl
         });
     }
 
+    /**
+     * Габариты части без поддеревьев из {@code skip}: потомки, которые превращение ведёт отдельно
+     * (голова фантома внутри его тела), не должны раздувать коробку родителя. Не кэшируется.
+     */
+    public static Box of(ModelPart part, Set<ModelPart> skip) {
+        if (skip.isEmpty()) {
+            return of(part);
+        }
+        float[] bounds = {Float.MAX_VALUE, Float.MAX_VALUE, Float.MAX_VALUE,
+                -Float.MAX_VALUE, -Float.MAX_VALUE, -Float.MAX_VALUE};
+        collect(part, 0.0F, 0.0F, 0.0F, bounds, skip);
+        if (bounds[0] > bounds[3]) {
+            return new Box(0, 0, 0, 0, 0, 0);
+        }
+        return new Box(bounds[0], bounds[1], bounds[2], bounds[3], bounds[4], bounds[5]);
+    }
+
     private static void collect(ModelPart part, float dx, float dy, float dz, float[] bounds) {
+        collect(part, dx, dy, dz, bounds, Set.of());
+    }
+
+    private static void collect(ModelPart part, float dx, float dy, float dz, float[] bounds, Set<ModelPart> skip) {
         ModelPartAccessor access = (ModelPartAccessor) (Object) part;
         for (ModelPart.Cube cube : access.mutagen$getCubes()) {
             bounds[0] = Math.min(bounds[0], cube.minX + dx);
@@ -42,16 +65,23 @@ public record Box(float minX, float minY, float minZ, float maxX, float maxY, fl
             bounds[5] = Math.max(bounds[5], cube.maxZ + dz);
         }
         for (ModelPart child : access.mutagen$getChildren().values()) {
+            if (skip.contains(child)) {
+                continue;
+            }
             PartPose pose = child.getInitialPose();
-            collect(child, dx + pose.x, dy + pose.y, dz + pose.z, bounds);
+            collect(child, dx + pose.x, dy + pose.y, dz + pose.z, bounds, skip);
         }
+    }
+
+    public Vector3f center() {
+        return new Vector3f((minX + maxX) * 0.5F, (minY + maxY) * 0.5F, (minZ + maxZ) * 0.5F);
     }
 
     public Vector3f size() {
         return new Vector3f(maxX - minX, maxY - minY, maxZ - minZ);
     }
 
-    /** Separate blending per axis: the bone's thickness and length change at different times. */
+    /** Своё смешивание по каждой оси: толщина и длина кости меняются в разное время. */
     public Box lerp(Box to, float tx, float ty, float tz) {
         return new Box(minX + (to.minX - minX) * tx, minY + (to.minY - minY) * ty, minZ + (to.minZ - minZ) * tz,
                 maxX + (to.maxX - maxX) * tx, maxY + (to.maxY - maxY) * ty, maxZ + (to.maxZ - maxZ) * tz);
@@ -62,7 +92,29 @@ public record Box(float minX, float minY, float minZ, float maxX, float maxY, fl
                 maxX + (to.maxX - maxX) * t, maxY + (to.maxY - maxY) * t, maxZ + (to.maxZ - maxZ) * t);
     }
 
-    /** Stretch around the center. */
+    /** Растянуть от точки поворота (начала координат части). */
+    public Box times(float factor) {
+        return new Box(minX * factor, minY * factor, minZ * factor, maxX * factor, maxY * factor, maxZ * factor);
+    }
+
+    /** Коробка, описанная вокруг повёрнутой. Для поворотов на прямой угол — ровно та же коробка. */
+    public Box rotated(Quaternionf rotation) {
+        float[] bounds = {Float.MAX_VALUE, Float.MAX_VALUE, Float.MAX_VALUE,
+                -Float.MAX_VALUE, -Float.MAX_VALUE, -Float.MAX_VALUE};
+        for (int corner = 0; corner < 8; corner++) {
+            Vector3f point = rotation.transform(new Vector3f((corner & 1) == 0 ? minX : maxX,
+                    (corner & 2) == 0 ? minY : maxY, (corner & 4) == 0 ? minZ : maxZ));
+            bounds[0] = Math.min(bounds[0], point.x);
+            bounds[1] = Math.min(bounds[1], point.y);
+            bounds[2] = Math.min(bounds[2], point.z);
+            bounds[3] = Math.max(bounds[3], point.x);
+            bounds[4] = Math.max(bounds[4], point.y);
+            bounds[5] = Math.max(bounds[5], point.z);
+        }
+        return new Box(bounds[0], bounds[1], bounds[2], bounds[3], bounds[4], bounds[5]);
+    }
+
+    /** Растянуть вокруг центра. */
     public Box scaled(float x, float y, float z) {
         float cx = (minX + maxX) * 0.5F;
         float cy = (minY + maxY) * 0.5F;
@@ -74,8 +126,8 @@ public record Box(float minX, float minY, float minZ, float maxX, float maxY, fl
     }
 
     /**
-     * How to fit this box into {@code target}: per-axis scale and offset in part coordinates.
-     * Point {@code v} of this box maps to {@code offset + scale * v}.
+     * Как вписать эту коробку в {@code target}: масштаб по осям и сдвиг в координатах части.
+     * Точка {@code v} этой коробки переходит в {@code offset + scale * v}.
      */
     public Fit fit(Box target) {
         Vector3f scale = new Vector3f(ratio(target.maxX - target.minX, maxX - minX),

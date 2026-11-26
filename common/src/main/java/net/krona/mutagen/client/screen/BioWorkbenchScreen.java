@@ -26,8 +26,8 @@ import java.util.Comparator;
 import java.util.List;
 
 /**
- * Biologist's workbench screen. On the left — a list of all assemblies: what you get and what it takes.
- * Clicking a row lays out the ingredients from the inventory; what can already be assembled is highlighted.
+ * Экран верстака биолога. Слева — список всех сборок: что получится и что для этого нужно.
+ * Клик по строке раскладывает ингредиенты из инвентаря; то, что уже можно собрать, подсвечено.
  */
 @Environment(EnvType.CLIENT)
 public class BioWorkbenchScreen extends AbstractContainerScreen<BioWorkbenchMenu> {
@@ -48,7 +48,7 @@ public class BioWorkbenchScreen extends AbstractContainerScreen<BioWorkbenchMenu
     @Override
     protected void init() {
         super.init();
-        // The window and the recipe panel are centered on the screen together.
+        // Окно и панель рецептов вместе стоят по центру экрана.
         leftPos = (width - imageWidth - PANEL_WIDTH) / 2 + PANEL_WIDTH;
     }
 
@@ -108,13 +108,13 @@ public class BioWorkbenchScreen extends AbstractContainerScreen<BioWorkbenchMenu
         }
     }
 
-    /** For tags, show the items in turn, once per second. */
+    /** Для тегов показываем предметы по очереди, раз в секунду. */
     private static ItemStack displayed(Ingredient ingredient, int time) {
         ItemStack[] items = ingredient.getItems();
         return items.length == 0 ? ItemStack.EMPTY : items[Math.floorMod(time, items.length)];
     }
 
-    /** Whether the inventory and the table have enough ingredients to assemble the recipe at least once. */
+    /** Хватает ли ингредиентов в инвентаре и на столе, чтобы собрать рецепт хотя бы раз. */
     private boolean canCraft(BioWorkbenchRecipe recipe) {
         for (BioWorkbenchRecipe.CountedIngredient ingredient : recipe.ingredients()) {
             if (available(ingredient.ingredient()) < ingredient.count()) {
@@ -203,7 +203,7 @@ public class BioWorkbenchScreen extends AbstractContainerScreen<BioWorkbenchMenu
 
     @Override
     protected boolean hasClickedOutside(double mouseX, double mouseY, int left, int top, int button) {
-        // A click on the recipe panel is not a "click outside the window"; items on the cursor must not be dropped.
+        // Клик по панели рецептов — не «клик мимо окна», предметы из курсора выбрасывать нельзя.
         return super.hasClickedOutside(mouseX, mouseY, left, top, button)
                 && !(mouseX >= panelLeft() && mouseX < leftPos && mouseY >= topPos && mouseY < topPos + imageHeight);
     }

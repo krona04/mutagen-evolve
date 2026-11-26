@@ -1,0 +1,142 @@
+{
+  "entity": "minecraft:drowned",
+  "color": "#4F8A7C",
+  "difficulty": 2,
+  "synthesis": {
+    "catalyst": "mutagen:catalyst",
+    "catalyst_count": 1,
+    "time": 350
+  },
+  "body": {
+    "model_layer": "minecraft:drowned",
+    "spread": [
+      "left_arm",
+      "body",
+      "head",
+      "right_arm",
+      "left_leg",
+      "right_leg"
+    ],
+    "skin": "texture",
+    "parts": [
+      {
+        "part": "head"
+      },
+      {
+        "part": "body"
+      },
+      {
+        "part": "right_arm"
+      },
+      {
+        "part": "left_arm"
+      },
+      {
+        "part": "right_leg"
+      },
+      {
+        "part": "left_leg"
+      }
+    ],
+    "overlays": [
+      {
+        "model_layer": "minecraft:drowned#outer",
+        "texture": "minecraft:textures/entity/zombie/drowned_outer_layer.png"
+      }
+    ]
+  },
+  "traits": [
+    {
+      "type": "mutagen:attribute",
+      "from_stage": "manifestation",
+      "attribute": "minecraft:generic.water_movement_efficiency",
+      "amount": 0.45
+    },
+    {
+      "type": "mutagen:water_effect",
+      "from_stage": "mutation",
+      "effect": "minecraft:water_breathing"
+    },
+    {
+      "type": "mutagen:water_effect",
+      "from_stage": "mutation",
+      "effect": "minecraft:night_vision"
+    },
+    {
+      "type": "mutagen:attribute",
+      "from_stage": "mutation",
+      "attribute": "minecraft:generic.movement_speed",
+      "amount": -0.1,
+      "operation": "add_multiplied_total"
+    },
+    {
+      "type": "mutagen:mob_neutrality",
+      "from_stage": "mutation",
+      "entities": [
+        "minecraft:drowned"
+      ]
+    },
+    {
+      "type": "mutagen:sun_burn",
+      "from_stage": "domination"
+    },
+    {
+      "type": "mutagen:dry_out",
+      "from_stage": "full",
+      "grace": 180,
+      "amount": 1
+    }
+  ],
+  "abilities": [
+    {
+      "type": "mutagen:leap",
+      "from_stage": "manifestation",
+      "name": "mutagen.ability.drowned.surge",
+      "cooldown": 140,
+      "cost": {
+        "hunger": 1
+      },
+      "power": 1.1,
+      "lift": 0.1,
+      "requires": "water"
+    },
+    {
+      "type": "mutagen:vortex",
+      "from_stage": "mutation",
+      "name": "mutagen.ability.drowned.undertow",
+      "cooldown": 280,
+      "cost": {
+        "hunger": 2
+      },
+      "radius": 5,
+      "pull": 0.8,
+      "damage": 3,
+      "duration": 40,
+      "requires": "water"
+    },
+    {
+      "type": "mutagen:hex",
+      "from_stage": "full",
+      "name": "mutagen.ability.drowned.tide",
+      "cooldown": 1100,
+      "cost": {
+        "hunger": 5
+      },
+      "apex": true,
+      "range": 10,
+      "radius": 7,
+      "damage": 5,
+      "effects": [
+        "minecraft:slowness"
+      ],
+      "duration": 100,
+      "amplifier": 1,
+      "particle": "minecraft:bubble",
+      "requires": "water"
+    }
+  ],
+  "vision": {
+    "shader": "mutagen:shaders/post/drowned.json",
+    "from_stage": "manifestation"
+  }
+}

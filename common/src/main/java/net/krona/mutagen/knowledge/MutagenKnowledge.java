@@ -21,18 +21,18 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Species research: what percentage of each species' genome has already been read.
+ * Изученность видов: сколько процентов генома каждого вида уже прочитано.
  * <p>
- * Stored in the world save. By default knowledge is shared across the world — the team researches together;
- * with {@code knowledgeScope = "player"} each player has their own lab in their head.
- * The species record appears as soon as its first sample is taken: that's how a species gets into the gene tree.
+ * Хранится в сохранении мира. По умолчанию знание общее на мир — команда исследует вместе;
+ * с {@code knowledgeScope = "player"} у каждого игрока своя лаборатория в голове.
+ * Запись о виде появляется, как только у него взят первый образец: так вид попадает в гено-древо.
  */
 public final class MutagenKnowledge extends SavedData {
     private static final String NAME = Mutagen.MOD_ID + "_knowledge";
     private static final int FORMAT_VERSION = 1;
     /**
-     * The datafix type is required: vanilla storage doesn't null-check it. This type has no
-     * fixes of its own for our fields, so the data passes through it untouched.
+     * Тип датафикса обязателен: ванильное хранилище не проверяет его на null. Своих правок у этого
+     * типа для наших полей нет, так что данные проходят через него нетронутыми.
      */
     private static final Factory<MutagenKnowledge> FACTORY =
             new Factory<>(MutagenKnowledge::new, MutagenKnowledge::load, DataFixTypes.SAVED_DATA_COMMAND_STORAGE);
@@ -59,7 +59,7 @@ public final class MutagenKnowledge extends SavedData {
         return create ? players.computeIfAbsent(player, key -> new LinkedHashMap<>()) : players.get(player);
     }
 
-    /** Species research for the player (or for the world, if knowledge is shared). */
+    /** Изученность вида для игрока (или для мира, если знание общее). */
     public float research(@Nullable UUID player, ResourceLocation strain) {
         Map<ResourceLocation, Float> scope = scope(player, false);
         return scope == null ? 0.0F : scope.getOrDefault(strain, 0.0F);
@@ -70,7 +70,7 @@ public final class MutagenKnowledge extends SavedData {
         return scope != null && scope.containsKey(strain);
     }
 
-    /** Adds the species to the gene tree. true if the species is encountered for the first time. */
+    /** Вносит вид в гено-древо. true, если вид встречен впервые. */
     public boolean discover(@Nullable UUID player, ResourceLocation strain) {
         Map<ResourceLocation, Float> scope = scope(player, true);
         if (scope == null || scope.containsKey(strain)) {
@@ -81,7 +81,7 @@ public final class MutagenKnowledge extends SavedData {
         return true;
     }
 
-    /** Adds research and returns the new value. */
+    /** Добавляет изученность и возвращает новое значение. */
     public float addResearch(@Nullable UUID player, ResourceLocation strain, float amount) {
         return setResearch(player, strain, research(player, strain) + amount);
     }
@@ -97,13 +97,13 @@ public final class MutagenKnowledge extends SavedData {
         return clamped;
     }
 
-    /** Everything the player knows: for the gene tree and the initial sync. */
+    /** Всё, что знает игрок: для гено-древа и первой синхронизации. */
     public Map<ResourceLocation, Float> view(@Nullable UUID player) {
         Map<ResourceLocation, Float> scope = scope(player, false);
         return scope == null ? Map.of() : Map.copyOf(scope);
     }
 
-    /** Broadcasts a change of one species to those it concerns: everyone with shared knowledge, otherwise one player. */
+    /** Рассылает изменение одного вида тем, кого оно касается: всем при общем знании, иначе одному игроку. */
     public void broadcast(MinecraftServer server, @Nullable UUID player, ResourceLocation strain) {
         Map<ResourceLocation, Float> delta = Map.of(strain, research(player, strain));
         for (ServerPlayer target : audience(server, player)) {
@@ -119,7 +119,7 @@ public final class MutagenKnowledge extends SavedData {
         return target == null ? List.of() : List.of(target);
     }
 
-    // --- Saving ---
+    // --- Сохранение ---
 
     @Override
     public CompoundTag save(CompoundTag tag, HolderLookup.Provider registries) {

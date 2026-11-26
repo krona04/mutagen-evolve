@@ -28,12 +28,12 @@ public final class Mutagen {
         Compat.report();
 
         MutagenComponents.register();
-        // Blocks go first: block items reference them on creation.
+        // Блоки идут первыми: предметы блоков ссылаются на них при создании.
         MutagenBlocks.register();
         MutagenItems.register();
         MutagenRecipes.register();
 
-        // Strains come from datapacks: on server start and on every /reload.
+        // Штаммы приходят из датапаков: при запуске сервера и при каждом /reload.
         ReloadListenerRegistry.register(PackType.SERVER_DATA, new StrainLoader(), id("strains"));
 
         MutagenNetwork.init();

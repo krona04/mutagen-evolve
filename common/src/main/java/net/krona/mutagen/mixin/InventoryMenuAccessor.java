@@ -5,7 +5,7 @@ import net.minecraft.world.inventory.InventoryMenu;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
-/** Whose inventory this is: the 2×2 grid needs to know the owner to ask whether they have fingers. */
+/** Чей это инвентарь: сетке 2×2 нужно знать владельца, чтобы спросить, есть ли у него пальцы. */
 @Mixin(InventoryMenu.class)
 public interface InventoryMenuAccessor {
     @Accessor("owner")

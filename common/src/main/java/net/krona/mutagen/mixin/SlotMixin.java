@@ -15,8 +15,8 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
- * Locked slots of the host's inventory: nothing can be put in or taken out. Works in any
- * menu that has the player inventory — their own, a chest's, a crafting table's.
+ * Запертые ячейки инвентаря носителя: в них нельзя положить и из них нельзя взять. Работает в любом
+ * меню, где есть инвентарь игрока, — и в своём, и у сундука, и у верстака.
  */
 @Mixin(Slot.class)
 public abstract class SlotMixin {
@@ -33,7 +33,7 @@ public abstract class SlotMixin {
             cir.setReturnValue(false);
             return;
         }
-        // The 2×2 grid in the inventory is fine work too: without fingers nothing can be put into it.
+        // Сетка 2×2 в инвентаре — тоже мелкая работа: без пальцев в неё ничего не положить.
         if (container instanceof TransientCraftingContainer grid
                 && ((TransientCraftingContainerAccessor) grid).mutagen$getMenu() instanceof InventoryMenu menu) {
             Player owner = ((InventoryMenuAccessor) menu).mutagen$getOwner();

@@ -1,0 +1,204 @@
+{
+  "entity": "minecraft:blaze",
+  "color": "#E8A019",
+  "difficulty": 4,
+  "synthesis": {
+    "catalyst": "minecraft:blaze_powder",
+    "catalyst_count": 2,
+    "time": 600
+  },
+  "body": {
+    "model_layer": "minecraft:blaze",
+    "spread": [
+      "head",
+      "body",
+      "right_arm",
+      "left_arm",
+      "right_leg",
+      "left_leg"
+    ],
+    "skin": "color",
+    "parts": [
+      {
+        "part": "head"
+      },
+      {
+        "part": "part4",
+        "bone": "right_arm"
+      },
+      {
+        "part": "part5",
+        "bone": "left_arm"
+      },
+      {
+        "part": "part8",
+        "bone": "right_leg"
+      },
+      {
+        "part": "part9",
+        "bone": "left_leg"
+      },
+      {
+        "part": "part0",
+        "bone": "body",
+        "grow": true
+      },
+      {
+        "part": "part1",
+        "bone": "body",
+        "grow": true
+      },
+      {
+        "part": "part2",
+        "bone": "body",
+        "grow": true
+      },
+      {
+        "part": "part3",
+        "bone": "body",
+        "grow": true
+      },
+      {
+        "part": "part6",
+        "bone": "body",
+        "grow": true
+      },
+      {
+        "part": "part7",
+        "bone": "body",
+        "grow": true
+      },
+      {
+        "part": "part10",
+        "bone": "body",
+        "grow": true
+      },
+      {
+        "part": "part11",
+        "bone": "body",
+        "grow": true
+      }
+    ],
+    "absorb": [
+      "body"
+    ]
+  },
+  "traits": [
+    {
+      "type": "mutagen:damage_factor",
+      "from_stage": "manifestation",
+      "damage_type": "#minecraft:is_fall",
+      "factor": 0.5
+    },
+    {
+      "type": "mutagen:damage_factor",
+      "from_stage": "mutation",
+      "damage_type": "#minecraft:is_fire",
+      "factor": 0
+    },
+    {
+      "type": "mutagen:water_damage",
+      "from_stage": "mutation",
+      "amount": 1,
+      "rain": true
+    },
+    {
+      "type": "mutagen:damage_factor",
+      "from_stage": "mutation",
+      "damage_type": "#minecraft:is_projectile",
+      "factor": 1.25
+    },
+    {
+      "type": "mutagen:mob_neutrality",
+      "from_stage": "mutation",
+      "entities": [
+        "minecraft:blaze"
+      ]
+    },
+    {
+      "type": "mutagen:attribute",
+      "from_stage": "domination",
+      "attribute": "minecraft:generic.armor",
+      "amount": 2
+    },
+    {
+      "type": "mutagen:damage_factor",
+      "from_stage": "domination",
+      "damage_type": "#minecraft:is_explosion",
+      "factor": 0.75
+    },
+    {
+      "type": "mutagen:flight",
+      "from_stage": "domination",
+      "speed": 0.055,
+      "exhaustion": 0.45,
+      "min_food": 8,
+      "rain": false
+    },
+    {
+      "type": "mutagen:no_offhand",
+      "from_stage": "domination"
+    },
+    {
+      "type": "mutagen:no_tools",
+      "from_stage": "full"
+    },
+    {
+      "type": "mutagen:no_crafting",
+      "from_stage": "full"
+    },
+    {
+      "type": "mutagen:no_building",
+      "from_stage": "full"
+    },
+    {
+      "type": "mutagen:armor_rejection",
+      "from_stage": "full"
+    }
+  ],
+  "abilities": [
+    {
+      "type": "mutagen:fireball",
+      "from_stage": "manifestation",
+      "name": "mutagen.ability.blaze.fireball",
+      "cooldown": 100,
+      "cost": {
+        "hunger": 1
+      },
+      "count": 1,
+      "spread": 0,
+      "requires": "dry"
+    },
+    {
+      "type": "mutagen:fireball",
+      "from_stage": "mutation",
+      "name": "mutagen.ability.blaze.salvo",
+      "cooldown": 280,
+      "cost": {
+        "hunger": 2.5
+      },
+      "count": 3,
+      "spread": 8,
+      "requires": "dry"
+    },
+    {
+      "type": "mutagen:shockwave",
+      "from_stage": "full",
+      "name": "mutagen.ability.blaze.inferno",
+      "cooldown": 1200,
+      "cost": {
+        "hunger": 5
+      },
+      "apex": true,
+      "radius": 6,
+      "damage": 7,
+      "knockback": 0.7,
+      "ignite": 5,
+      "requires": "dry"
+    }
+  ],
+  "vision": {
+    "shader": "mutagen:shaders/post/blaze.json",
+    "from_stage": "manifestation"
+  }
+}

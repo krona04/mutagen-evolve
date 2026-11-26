@@ -19,7 +19,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.UUID;
 
 /**
- * Shared part of lab machines: container, progress and syncing with the screen.
+ * Общая часть лабораторных машин: контейнер, прогресс и синхронизация с экраном.
  */
 public abstract class MachineBlockEntity extends BlockEntity implements Container, MenuProvider {
     public static final int DATA_PROGRESS = 0;
@@ -34,8 +34,8 @@ public abstract class MachineBlockEntity extends BlockEntity implements Containe
     protected int burnTime;
     protected int burnDuration;
     /**
-     * Who opened the machine last. With per-player research ({@code knowledgeScope = "player"})
-     * the sequencer records knowledge for this player, and the synthesizer takes research progress from them.
+     * Кто последним открыл машину. При личной изученности ({@code knowledgeScope = "player"})
+     * секвенатор записывает знание этому игроку, а синтезатор берёт изученность у него.
      */
     @Nullable
     protected UUID owner;
@@ -80,7 +80,7 @@ public abstract class MachineBlockEntity extends BlockEntity implements Containe
         return data;
     }
 
-    /** Called when the screen is opened: the machine remembers who it is working for. */
+    /** Вызывается при открытии экрана: машина запоминает, на кого работает. */
     protected void rememberUser(Player player) {
         if (!player.getUUID().equals(owner)) {
             owner = player.getUUID();
@@ -156,7 +156,7 @@ public abstract class MachineBlockEntity extends BlockEntity implements Containe
         items.clear();
     }
 
-    // --- Saving ---
+    // --- Сохранение ---
 
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {

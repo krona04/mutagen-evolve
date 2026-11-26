@@ -25,7 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Handling of server packets on the client.
+ * Приём серверных пакетов на клиенте.
  */
 @Environment(EnvType.CLIENT)
 public final class MutagenClientHooks {
@@ -47,11 +47,11 @@ public final class MutagenClientHooks {
                 Stage stageBefore = before == null ? Stage.NONE : before.stage();
                 data.applySnapshot(payload.genes());
                 MutagenData.Gene after = data.primary();
-                // The stage has increased — the body twists. Everyone watching sees it, not just the host.
+                // Стадия выросла — тело выкручивает. Видят все, кто смотрит, а не только сам носитель.
                 if (after != null && after.stage().ordinal() > stageBefore.ordinal() && stageBefore != Stage.NONE) {
                     BodyMotion.startConvulsion(player);
                 }
-                // The hitbox and eyes are computed from progress: the client recalculates them itself, just like the server.
+                // Хитбокс и глаза считаются из прогресса: клиент пересчитывает их сам, как и сервер.
                 Mutation.refreshDimensions(player);
             }
         });
@@ -69,8 +69,8 @@ public final class MutagenClientHooks {
 
     public static void handleStrains(MutagenNetwork.StrainsPayload payload, NetworkManager.PacketContext context) {
         context.queue(() -> {
-            // In singleplayer the server lives in the same process and already holds this set:
-            // there's no point replacing it with a copy.
+            // В одиночной игре сервер живёт в том же процессе и уже держит этот набор:
+            // подменять его копией незачем.
             if (Minecraft.getInstance().hasSingleplayerServer()) {
                 return;
             }
@@ -82,6 +82,12 @@ public final class MutagenClientHooks {
             }
             Strains.replace(strains);
         });
+    }
+
+    /** Сервер применил способность: заводим таймер, чтобы нарисовать перезарядку. */
+    public static void handleAbilityUsed(MutagenNetwork.AbilityUsedPayload payload,
+                                         NetworkManager.PacketContext context) {
+        context.queue(() -> ClientAbilities.startCooldown(payload.index(), payload.cooldown()));
     }
 
     public static void handleKnowledge(MutagenNetwork.KnowledgePayload payload, NetworkManager.PacketContext context) {

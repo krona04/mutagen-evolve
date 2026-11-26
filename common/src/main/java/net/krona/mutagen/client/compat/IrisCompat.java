@@ -9,11 +9,11 @@ import org.slf4j.Logger;
 import java.lang.reflect.Method;
 
 /**
- * Iris without depending on Iris. Our layers over the skin are translucent: in the shaders' shadow pass
- * they contribute nothing but extra work and dark halos, so they are skipped there.
+ * Iris без зависимости от Iris. Наши слои поверх скина полупрозрачные: в проходе теней шейдеров
+ * они ничего не дают, кроме лишней работы и тёмных ореолов, поэтому там они пропускаются.
  * <p>
- * The API is obtained via reflection ({@code net.irisshaders.iris.api.v0.IrisApi}): Iris is available on both Fabric
- * and NeoForge, and the mod builds without it.
+ * API берётся через рефлексию ({@code net.irisshaders.iris.api.v0.IrisApi}): Iris ставится и на Fabric,
+ * и на NeoForge, а мод собирается без него.
  */
 @Environment(EnvType.CLIENT)
 public final class IrisCompat {
@@ -41,7 +41,7 @@ public final class IrisCompat {
         }
     }
 
-    /** Whether the shader pack's shadow pass is running right now. Without Iris — always false. */
+    /** Идёт ли сейчас проход теней шейдерпака. Без Iris — всегда нет. */
     public static boolean isShadowPass() {
         if (!resolved) {
             resolve();

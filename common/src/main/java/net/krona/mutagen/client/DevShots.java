@@ -17,12 +17,12 @@ import org.slf4j.Logger;
 import java.nio.file.Files;
 
 /**
- * Development tool: screenshots on a chat command, to check stage visuals hands-free.
+ * Инструмент разработки: снимки экрана по команде из чата, чтобы проверять визуал стадий без рук.
  * <p>
- * Enabled only by the {@code mutagen_devshots.flag} file in the game folder — players don't have it, and the hook
- * isn't registered at all. A chat line like {@code [devshot] name view} (view — {@code front}, {@code back}
- * {@code first}, {@code inventory} or {@code turntable} — four angles at once) positions the camera, hides the HUD and saves {@code screenshots/name.png} a second later.
- * Convenient to send from the server via {@code say} over RCON.
+ * Включается только файлом {@code mutagen_devshots.flag} в папке игры — у игроков его нет, и хук
+ * не регистрируется вовсе. Строка чата вида {@code [devshot] имя вид} (вид — {@code front}, {@code back}
+ * {@code first}, {@code inventory} или {@code turntable} — четыре ракурса сразу) ставит камеру, прячет интерфейс и через секунду сохраняет {@code screenshots/имя.png}.
+ * Удобно слать её с сервера через {@code say} из RCON.
  */
 @Environment(EnvType.CLIENT)
 public final class DevShots {
@@ -44,7 +44,7 @@ public final class DevShots {
             return;
         }
         LOGGER.warn("[Mutagen] Dev screenshots are enabled (mutagen_devshots.flag)");
-        // The say command arrives sometimes as player chat, sometimes as a system message — listen to both.
+        // Команда say приходит то чатом игрока, то системным сообщением — слушаем оба.
         ClientChatEvent.RECEIVED.register((type, message) -> {
             onMessage(message.getString());
             return CompoundEventResult.pass();
@@ -76,7 +76,7 @@ public final class DevShots {
             case "first" -> CameraType.FIRST_PERSON;
             default -> CameraType.THIRD_PERSON_FRONT;
         });
-        // The HUD is hidden together with the hand, so for the first-person view we leave it alone.
+        // Интерфейс прячется вместе с рукой, поэтому для вида от первого лица его не трогаем.
         minecraft.options.hideGui = !"first".equals(view) && !"inventory".equals(view) && !"turntable".equals(view);
         if ("inventory".equals(view) && minecraft.player != null) {
             minecraft.setScreen(new InventoryScreen(minecraft.player));

@@ -22,10 +22,10 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Optional;
 
 /**
- * Biologist's workbench: six slots for reagents and the result.
+ * Верстак биолога: шесть ячеек под реагенты и результат.
  * <p>
- * Works only with recipes of its own type ({@code mutagen:bio_workbench}). The vanilla crafting table
- * no longer hides here: everything assembled at the biologist's is assembled only at the biologist's.
+ * Работает только на рецептах своего типа ({@code mutagen:bio_workbench}). Ванильный верстак
+ * здесь больше не прячется: всё, что собирается у биолога, собирается только у биолога.
  */
 public class BioWorkbenchMenu extends AbstractContainerMenu {
     public static final int INPUTS = 6;
@@ -89,7 +89,7 @@ public class BioWorkbenchMenu extends AbstractContainerMenu {
                 .orElse(ItemStack.EMPTY));
     }
 
-    /** Take the result: ingredients are consumed only now, not when laid out. */
+    /** Забрать результат: ингредиенты списываются только сейчас, а не при раскладке. */
     private void craft(Player taker, ItemStack stack) {
         if (current == null || !current.value().consume(inputs)) {
             return;
@@ -98,8 +98,8 @@ public class BioWorkbenchMenu extends AbstractContainerMenu {
     }
 
     /**
-     * Lays out the recipe's ingredients from the inventory: first everything on the table goes back to the player,
-     * then each ingredient is placed in its slot. If something is missing, as much as there is gets placed.
+     * Раскладывает ингредиенты рецепта из инвентаря: сначала всё со стола уходит обратно игроку,
+     * потом каждый ингредиент кладётся в свою ячейку. Если чего-то не хватает, кладётся сколько есть.
      */
     public void fill(ServerPlayer target, ResourceLocation recipeId) {
         Optional<RecipeHolder<?>> holder = target.serverLevel().getRecipeManager().byKey(recipeId);
@@ -195,7 +195,7 @@ public class BioWorkbenchMenu extends AbstractContainerMenu {
         return stillValid(access, taker, MutagenBlocks.BIO_WORKBENCH.get());
     }
 
-    /** Slots on the table — for highlighting recipes that can already be assembled. */
+    /** Ячейки на столе — для подсветки рецептов, которые уже можно собрать. */
     public Container inputs() {
         return inputs;
     }

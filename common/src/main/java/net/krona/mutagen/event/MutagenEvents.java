@@ -8,6 +8,7 @@ import dev.architectury.event.events.common.PlayerEvent;
 import dev.architectury.event.events.common.TickEvent;
 import net.krona.mutagen.data.MutagenData;
 import net.krona.mutagen.data.MutagenPlayer;
+import net.krona.mutagen.mutation.Flight;
 import net.krona.mutagen.mutation.Mutation;
 import net.krona.mutagen.mutation.Restrictions;
 import net.krona.mutagen.network.MutagenNetwork;
@@ -21,7 +22,7 @@ import net.minecraft.world.entity.projectile.AbstractArrow;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * Hooking the mutation logic into the server lifecycle.
+ * Подключение логики мутации к жизни сервера.
  */
 public final class MutagenEvents {
     private static final int MAX_REPORTED_ERRORS = 5;
@@ -34,11 +35,14 @@ public final class MutagenEvents {
             if (player instanceof ServerPlayer serverPlayer) {
                 Mutation.tick(serverPlayer);
                 Restrictions.tick(serverPlayer);
+                Flight.tick(serverPlayer);
+                net.krona.mutagen.mutation.AquaticAdaptation.tick(serverPlayer);
+                net.krona.mutagen.ability.LungeAttack.tick(serverPlayer);
             }
         });
 
-        // A body without hands: workstations, tools and weapons. Events arrive on both sides, so the refusal
-        // doesn't even get to swing the arm on the client.
+        // Тело без рук: станки, инструменты и оружие. События приходят на обе стороны, поэтому отказ
+        // не успевает даже качнуть руку на клиенте.
         InteractionEvent.RIGHT_CLICK_BLOCK.register((player, hand, pos, face) -> {
             if (Restrictions.blocksSleep(player, player.level().getBlockState(pos))) {
                 Restrictions.tell(player, "mutagen.restriction.sleep");
@@ -82,8 +86,8 @@ public final class MutagenEvents {
             return EventResult.pass();
         });
 
-        // A datapack reload is applied in the server tick, not in the middle of resource loading:
-        // that way broadcasting happens on the same thread as the rest of the game.
+        // Перезагрузка датапака применяется в тике сервера, а не посреди загрузки ресурсов:
+        // так рассылка идёт с того же потока, что и вся остальная игра.
         TickEvent.SERVER_POST.register(server -> {
             StrainLoader.Result reload = StrainLoader.consumePending();
             if (reload != null) {
@@ -92,7 +96,7 @@ public final class MutagenEvents {
         });
 
         PlayerEvent.PLAYER_JOIN.register(player -> {
-            // Order matters: the client needs the strains before the state that references them.
+            // Порядок важен: клиенту нужны штаммы раньше, чем состояние, которое на них ссылается.
             MutagenNetwork.sendStrains(player);
             MutagenNetwork.sendFullKnowledge(player);
             Mutation.refreshAttributes(player, MutagenPlayer.of(player));
@@ -101,7 +105,7 @@ public final class MutagenEvents {
 
         PlayerEvent.PLAYER_QUIT.register(MutagenNetwork::forget);
 
-        // Death doesn't remove the strain: the body dies, the genome remains.
+        // Смерть не снимает штамм: тело умирает, геном остаётся.
         PlayerEvent.PLAYER_CLONE.register((oldPlayer, newPlayer, wonGame) -> {
             MutagenData from = MutagenPlayer.of(oldPlayer);
             MutagenData to = MutagenPlayer.of(newPlayer);
@@ -113,10 +117,10 @@ public final class MutagenEvents {
             MutagenNetwork.syncPlayer(player);
         });
 
-        // On a dimension change the client recreates the player, and its copy of the state is lost.
+        // При смене измерения клиент создаёт игрока заново, и его копия состояния теряется.
         PlayerEvent.CHANGE_DIMENSION.register((player, from, to) -> MutagenNetwork.syncPlayer(player));
 
-        // Arrows of the skeleton strain hit harder.
+        // Стрелы скелетного штамма бьют сильнее.
         EntityEvent.ADD.register((entity, level) -> {
             if (entity instanceof AbstractArrow arrow && arrow.getOwner() instanceof Player owner
                     && !level.isClientSide) {
@@ -130,9 +134,9 @@ public final class MutagenEvents {
     }
 
     /**
-     * {@code /reload} on the fly: new strains go to all clients, traits are rebuilt immediately,
-     * and operators see how many strains loaded and which files are broken.
-     * Genes of strains that no longer exist stay in the save and simply stay silent — until the file is restored.
+     * {@code /reload} на лету: новые штаммы уходят всем клиентам, черты пересобираются сразу,
+     * а операторы видят, сколько штаммов загрузилось и какие файлы сломаны.
+     * Гены штаммов, которых больше нет, остаются в сохранении и просто молчат — пока файл не вернут.
      */
     private static void onStrainsReloaded(MinecraftServer server, StrainLoader.Result reload) {
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {

@@ -15,12 +15,12 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
 /**
- * Serum: an injection puts an absorption reserve into the body. Progress doesn't jump — the body processes
- * the dose slowly, and that is the mod's main difference from an instant morph.
+ * Сыворотка: инъекция кладёт в тело запас усвоения. Прогресс не прыгает — тело перерабатывает
+ * дозу медленно, и это главное отличие мода от мгновенного морфа.
  * <p>
- * The injection fires on a single press, without holding: that way there is no "using item" state
- * between the press and the result, which is where everything used to get stuck.
- * The ampoule is consumed only when the dose has actually gone in.
+ * Укол срабатывает по одному нажатию, без удержания: так между нажатием и результатом нет
+ * состояния «использую предмет», в котором раньше всё и застревало.
+ * Ампула тратится только тогда, когда доза действительно вошла.
  */
 public class SerumItem extends GeneItem {
     private static final int COOLDOWN_TICKS = 20;
@@ -49,7 +49,7 @@ public class SerumItem extends GeneItem {
             return InteractionResultHolder.pass(stack);
         }
 
-        // The dose is checked before injecting: a refusal must not cost the player an ampoule.
+        // Доза проверяется до укола: отказ не должен стоить игроку ампулы.
         if (!Mutation.dose(serverPlayer, gene.strain(), gene.quality(), gene.limit())) {
             return InteractionResultHolder.fail(stack);
         }

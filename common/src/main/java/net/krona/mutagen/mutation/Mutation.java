@@ -41,25 +41,25 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * All server-side transformation logic: dose absorption, decay, stages and their cost.
+ * Вся серверная логика трансформации: усвоение дозы, откат, стадии и цена за них.
  * <p>
- * The speed rule comes from the design document: a dose doesn't give progress immediately, it goes
- * into the absorption reserve, and the body processes it slowly. Without support, progress decays.
+ * Правило скоростей взято из дизайн-документа: доза не даёт прогресс сразу, она кладётся
+ * в запас усвоения, а тело перерабатывает его медленно. Без поддержки прогресс откатывается.
  */
 public final class Mutation {
-    /** How many percent of progress the body absorbs per second. 1% per 30 seconds. */
+    /** Сколько процентов прогресса тело усваивает за секунду. 1% за 30 секунд. */
     private static final float ABSORB_PER_SECOND = 1.0F / 30.0F;
-    /** Decay without support: 1% per 8 in-game minutes. */
+    /** Откат без поддержки: 1% за 8 игровых минут. */
     private static final float DECAY_PER_SECOND = 1.0F / (8.0F * 60.0F);
 
     private Mutation() {
     }
 
     /**
-     * Inject a dose: progress doesn't jump; an absorption reserve is put into the body.
+     * Ввести дозу: прогресс не прыгает, в тело кладётся запас усвоения.
      * <p>
-     * {@code limit} is the serum's cap from species research. The reserve is added only up to it:
-     * a weak serum won't raise progress above 40%, no matter how much is injected.
+     * {@code limit} — потолок сыворотки из изученности вида. Запас кладётся только до него:
+     * слабая сыворотка не поднимет прогресс выше 40%, сколько её ни вводи.
      */
     public static boolean dose(ServerPlayer player, ResourceLocation strainId, float quality, int limit) {
         Strain strain = Strains.get(strainId);
@@ -72,7 +72,7 @@ public final class Mutation {
             MutagenData.Gene occupied = data.primary();
             Strain held = occupied == null ? null : Strains.get(occupied.strainId());
             Component heldName = held == null ? Component.literal("?") : held.displayName();
-            // To chat, not the action bar: a refusal is easy to miss, and it explains what to do.
+            // В чат, а не в строку над хотбаром: отказ легко не заметить, а он объясняет, что делать.
             player.sendSystemMessage(Component.translatable("mutagen.message.too_many_genes", heldName)
                     .withStyle(net.minecraft.ChatFormatting.RED));
             return false;
@@ -80,7 +80,7 @@ public final class Mutation {
         float reached = existing == null ? 0.0F : existing.progress() + existing.pending();
         float room = limit - reached;
         if (room <= 0.01F) {
-            // Refusal before injecting: the ampoule stays with the player, and the message says what's missing.
+            // Отказ до укола: ампула остаётся у игрока, а сообщение говорит, чего не хватает.
             player.sendSystemMessage(Component.translatable("mutagen.message.serum_too_weak",
                     strain.displayName(), limit).withStyle(net.minecraft.ChatFormatting.RED));
             return false;
@@ -103,7 +103,7 @@ public final class Mutation {
         return true;
     }
 
-    /** Antimutagen: a painful rollback of progress. */
+    /** Антимутаген: болезненный откат прогресса. */
     public static boolean reverse(ServerPlayer player, float amount) {
         MutagenData data = MutagenPlayer.of(player);
         MutagenData.Gene gene = data.primary();
@@ -130,7 +130,7 @@ public final class Mutation {
         return true;
     }
 
-    /** Called every tick; the heavy part runs once per second. */
+    /** Вызывается каждый тик; тяжёлая часть работает раз в секунду. */
     public static void tick(ServerPlayer player) {
         MutagenData data = MutagenPlayer.of(player);
         if (player.tickCount % 20 != 0) {
@@ -144,7 +144,7 @@ public final class Mutation {
         }
         refreshAttributes(player, data);
 
-        // The network decides by itself whether the state has changed enough to send it.
+        // Сеть сама решает, достаточно ли изменилось состояние, чтобы его отправлять.
         MutagenNetwork.syncPlayer(player, data.isDirty());
         data.clearDirty();
     }
@@ -163,9 +163,9 @@ public final class Mutation {
                 gene.setProgress(gene.progress() + step);
             } else if (!gene.locked() && gene.progress() > 0.0F && !gene.stage().atLeast(Stage.FULL)
                     && !Research.mastered(knowledge.research(player.getUUID(), gene.strainId()))) {
-                // The full form doesn't decay on its own: there is no human nature left in the body
-                // to pull it back. The way back is only antimutagen or a full reset.
-                // A fully researched species also holds on its own: the body knows this genome entirely.
+                // Полная форма не откатывается сама: человеческой природы, которая тянула бы назад,
+                // в теле уже не осталось. Обратно — только антимутагеном или полным сбросом.
+                // Полностью изученный вид тоже держится сам: тело знает этот геном целиком.
                 gene.setProgress(gene.progress() - DECAY_PER_SECOND * speed);
                 if (gene.progress() <= 0.0F) {
                     finished.add(gene);
@@ -224,7 +224,7 @@ public final class Mutation {
         }
         boolean up = to.ordinal() > from.ordinal();
 
-        // Breaking: a transition between stages is always felt by the body.
+        // Ломка: переход между стадиями всегда ощущается телом.
         player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 40, 4, false, false, false));
         player.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 80, 0, false, false, false));
         player.level().playSound(null, player.blockPosition(),
@@ -241,8 +241,8 @@ public final class Mutation {
     }
 
     /**
-     * Rebuilds attribute modifiers for the current stages.
-     * Idempotent: runs every second and survives death and rejoining.
+     * Пересобирает модификаторы атрибутов под текущие стадии.
+     * Идемпотентно: выполняется каждую секунду и переживает смерть и перезаход.
      */
     public static void refreshAttributes(ServerPlayer player, MutagenData data) {
         Map<ResourceLocation, DesiredModifier> desired = new LinkedHashMap<>();
@@ -265,8 +265,8 @@ public final class Mutation {
             }
         }
 
-        // Body (0.3): model growth, hitbox, eyes and reach change smoothly along with progress.
-        // Exactly how — vanilla attributes or Pehkui — is decided by the layer.
+        // Тело (0.3): рост модели, хитбокс, глаза и дальность рук идут плавно вместе с прогрессом.
+        // Через что именно — ванильные атрибуты или Pehkui — решает прослойка.
         BodyShape shape = BodyShape.of(data.primary());
         Bodies.scaler().apply(player, shape, (attribute, amount, operation) -> {
             ResourceLocation id = Mutagen.id("body/" + attribute.unwrapKey()
@@ -277,7 +277,7 @@ public final class Mutation {
         refreshDimensions(player);
     }
 
-    /** Recalculates the hitbox if the body shape has changed it. Cheap when nothing has changed. */
+    /** Пересчитывает хитбокс, если форма тела его поменяла. Дёшево, когда ничего не изменилось. */
     public static void refreshDimensions(Player player) {
         EntityDimensions target = player.getDimensions(player.getPose());
         if (Math.abs(target.width() - player.getBbWidth()) > 1.0E-4F
@@ -341,7 +341,7 @@ public final class Mutation {
         return Mutagen.id("strain/" + strainPath + "/" + attributeKey + "/" + operation.ordinal());
     }
 
-    /** Damage weaknesses and immunities. */
+    /** Слабости и иммунитеты к урону. */
     public static float modifyIncomingDamage(LivingEntity entity, DamageSource source, float amount) {
         if (!(entity instanceof Player player)) {
             return amount;
@@ -361,7 +361,25 @@ public final class Mutation {
         return result;
     }
 
-    /** Effect immunity. */
+    /** Иммунитет к эффектам. */
+    /** Признал ли этот вид носителя своим: тогда он на него не нападает. */
+    public static boolean pacified(Player player, net.minecraft.world.entity.EntityType<?> kind) {
+        MutagenData data = MutagenPlayer.of(player);
+        for (MutagenData.Gene gene : data.genes()) {
+            Strain strain = Strains.get(gene.strainId());
+            if (strain == null) {
+                continue;
+            }
+            Stage stage = gene.stage();
+            for (Trait trait : strain.activeTraits(stage)) {
+                if (trait.pacifies(kind, stage)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     public static boolean blocksEffect(LivingEntity entity, Holder<MobEffect> effect) {
         if (!(entity instanceof Player player)) {
             return false;
@@ -382,7 +400,70 @@ public final class Mutation {
         return false;
     }
 
-    /** The host's arrow damage multiplier. */
+    /** Есть ли у носителя хоть одна активная черта, для которой проверка верна. Работает на обеих сторонах. */
+    private static boolean anyTrait(Player player, java.util.function.BiPredicate<Trait, Stage> test) {
+        MutagenData data = MutagenPlayer.of(player);
+        if (data == null) {
+            return false;
+        }
+        for (MutagenData.Gene gene : data.genes()) {
+            Strain strain = Strains.get(gene.strainId());
+            if (strain == null) {
+                continue;
+            }
+            Stage stage = gene.stage();
+            for (Trait trait : strain.activeTraits(stage)) {
+                if (test.test(trait, stage)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private static void eachTrait(Player player, java.util.function.BiConsumer<Trait, Stage> action) {
+        anyTrait(player, (trait, stage) -> {
+            action.accept(trait, stage);
+            return false;
+        });
+    }
+
+    /** Лазает ли носитель по стенам. */
+    public static boolean climbs(Player player) {
+        return anyTrait(player, Trait::climbs);
+    }
+
+    /** Проходит ли носитель сквозь паутину. */
+    public static boolean walksThroughWebs(Player player) {
+        return anyTrait(player, Trait::walksThroughWebs);
+    }
+
+    /** Отказывается ли тело отдать этот предмет. */
+    public static boolean hoards(Player player, net.minecraft.world.item.ItemStack stack) {
+        return anyTrait(player, (trait, stage) -> trait.hoards(stack, stage));
+    }
+
+    /**
+     * Удар вплотную: кто-то кого-то бьёт своей рукой, лапой или жалом — не стрелой и не шипами.
+     * Черты нападающего носителя срабатывают по цели, черты носителя-цели — по нападающему.
+     */
+    public static void onDamaged(LivingEntity target, DamageSource source) {
+        if (target.level().isClientSide || source.is(net.minecraft.world.damagesource.DamageTypes.THORNS)) {
+            return;
+        }
+        net.minecraft.world.entity.Entity direct = source.getDirectEntity();
+        if (direct == null || direct != source.getEntity() || direct == target) {
+            return;
+        }
+        if (direct instanceof ServerPlayer attacker) {
+            eachTrait(attacker, (trait, stage) -> trait.onMeleeHit(attacker, target, stage));
+        }
+        if (target instanceof ServerPlayer victim && direct instanceof LivingEntity attacker) {
+            eachTrait(victim, (trait, stage) -> trait.onMeleeHurt(victim, attacker, stage));
+        }
+    }
+
+    /** Множитель урона стрел носителя. */
     public static double arrowFactor(Player player) {
         MutagenData data = MutagenPlayer.of(player);
         double factor = 1.0D;

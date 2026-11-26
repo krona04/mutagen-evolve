@@ -11,12 +11,12 @@ import org.slf4j.Logger;
 import java.lang.reflect.Method;
 
 /**
- * Body via Pehkui: hitbox width and height, eye height, reach and inertia are changed by its
- * own scale types, and it handles syncing with clients itself. The model shape is changed by the
- * transformation itself, so Pehkui's model scales are left alone.
+ * Тело через Pehkui: ширина и высота хитбокса, высота глаз, дальность рук и инерция меняются его
+ * собственными типами масштаба, а синхронизацию с клиентами он делает сам. Форму модели меняет само
+ * превращение, поэтому модельные масштабы Pehkui не трогаются.
  * <p>
- * Pehkui is not needed to build: the mod accesses its API ({@code virtuoel.pehkui.api}) via reflection.
- * If the API is missing or has changed, {@link #create()} returns null and the mod stays on the vanilla layer.
+ * Pehkui не нужен для сборки: к его API ({@code virtuoel.pehkui.api}) мод обращается через рефлексию.
+ * Если API не нашлось или изменилось, {@link #create()} вернёт null и мод останется на ванильной прослойке.
  */
 public final class PehkuiBodyScaler implements BodyScaler {
     private static final Logger LOGGER = LogUtils.getLogger();
@@ -83,21 +83,21 @@ public final class PehkuiBodyScaler implements BodyScaler {
         }
         float heightFactor = shape.heightFactor();
         try {
-            // In Pehkui WIDTH and HEIGHT stretch both the hitbox and the model. The model has already taken the creature's shape,
-            // and stretching it a second time would distort it, so they are held at one and only
-            // the hitbox changes.
+            // WIDTH и HEIGHT в Pehkui растягивают и хитбокс, и модель. Модель уже приняла форму существа,
+            // растянуть её второй раз — значит исказить, поэтому они держатся на единице, а меняется
+            // только хитбокс.
             set(player, width, 1.0F);
             set(player, height, 1.0F);
             set(player, hitboxWidth, shape.widthFactor());
             set(player, hitboxHeight, heightFactor);
-            // Pehkui's eye height follows the hitbox height; the mod adjusts the creature's own eye placement
-            // itself in the player dimensions mixin, so Pehkui's own eye multiplier is held at one.
+            // Высота глаз у Pehkui следует за высотой хитбокса; свою посадку глаз существа мод поправляет
+            // сам в миксине размеров игрока, поэтому собственный множитель глаз Pehkui держится на единице.
             set(player, eyeHeight, 1.0F);
             set(player, modelWidth, shape.renderScale());
             set(player, modelHeight, shape.renderScale());
             set(player, blockReach, (BodyShape.BASE_BLOCK_REACH + shape.reach()) / BodyShape.BASE_BLOCK_REACH);
             set(player, entityReach, (BodyShape.BASE_ENTITY_REACH + shape.reach()) / BodyShape.BASE_ENTITY_REACH);
-            // A big body takes wider steps and accelerates more heavily: inertia follows height, but at half the rate.
+            // Большое тело шагает шире и разгоняется тяжелее: инерция идёт за ростом, но вполовину.
             set(player, motion, 1.0F + (heightFactor - 1.0F) * 0.5F);
         } catch (Throwable e) {
             broken = true;
@@ -111,8 +111,8 @@ public final class PehkuiBodyScaler implements BodyScaler {
         if (Math.abs(current - target) < EPSILON) {
             return;
         }
-        // The scale is not saved on the player: the mod sets it again every second, and without the mod the body
-        // must return to human, not stay a giant forever.
+        // Масштаб не сохраняется в игроке: мод выставляет его заново каждую секунду, а без мода тело
+        // должно вернуться к человеческому, а не остаться великаном навсегда.
         setPersistence.invoke(data, Boolean.FALSE);
         setScaleTickDelay.invoke(data, TICK_DELAY);
         setTargetScale.invoke(data, target);
