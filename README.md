@@ -2,6 +2,8 @@
 
 **Become the mob. Pay what it costs.**
 
+![Mutagen Banner](https://i.imgur.com/QNd2ZcX.png)
+
 > ⚠️ **EARLY ACCESS**
 >
 > This is **0.2 «Abilities & Transformations»**. Twelve creatures to turn into, each with its own
