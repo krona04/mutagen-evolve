@@ -37,6 +37,7 @@
 .catalogue .strain-icon { padding: .2rem; border: 1px solid var(--line); background: #223129; }
 .strain-table-name { display: inline-flex; align-items: center; gap: .45rem; }
 .strain-table-name .strain-icon { width: 1.5rem; height: 1.5rem; }
+.wiki-main .trait-list { margin: 0; padding-inline-start: 1.05rem; }
 .recipe-diagram { width: min(100%, 27rem); margin-block: 1rem; }
 .recipe-diagram img { width: 100%; image-rendering: pixelated; }
 .wiki-main .recipe-meta { color: var(--muted); }
