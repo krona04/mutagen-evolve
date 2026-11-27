@@ -11,8 +11,8 @@ import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 /**
- * Инструмент разработки: игрок с четырёх сторон на одном кадре — спереди, вполоборота, сбоку и сзади.
- * Открывается только из {@link DevShots} (вид {@code turntable}), у игроков его нет.
+ * Development view showing the player from the front, three-quarter angle, side, and back in one frame.
+ * Opened only by {@link DevShots} with {@code turntable}.
  */
 @Environment(EnvType.CLIENT)
 public class DevTurntableScreen extends Screen {

@@ -15,7 +15,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 /**
- * Предмет, который несёт генетический материал: образец, геном или сыворотка.
+ * Item carrying a sample, genome, or serum.
  */
 public class GeneItem extends Item {
     public GeneItem(Properties properties) {
@@ -51,7 +51,7 @@ public class GeneItem extends Item {
                     .withStyle(ChatFormatting.GOLD));
         }
 
-        // Изученность видна только тому, кто её знает: на клиенте она приходит с сервера.
+        // The tooltip shows only the research the server shared with this player.
         float research = ClientKnowledge.research(gene.strain());
         if (research >= 0.0F && !(this instanceof SerumItem)) {
             tooltip.add(Component.translatable("mutagen.tooltip.research", String.format("%.0f", research))

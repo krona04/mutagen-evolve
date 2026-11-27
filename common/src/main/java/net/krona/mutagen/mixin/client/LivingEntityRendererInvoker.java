@@ -7,9 +7,8 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Invoker;
 
 /**
- * Собственный масштаб и сдвиг рендера существа. Фантом, например, рисуется ниже своих координат
- * модели, а игрок — чуть меньше их. Превращению нужно знать это заранее, чтобы на 99% тело стояло
- * ровно там, где на 100% встанет настоящее существо.
+ * Expose the creature renderer's scale and offset. The morph needs these to line up the player at 99% with
+ * the creature at 100%.
  */
 @Mixin(LivingEntityRenderer.class)
 public interface LivingEntityRendererInvoker {

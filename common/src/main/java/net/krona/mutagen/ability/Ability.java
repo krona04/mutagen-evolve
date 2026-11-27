@@ -5,44 +5,41 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 
 /**
- * Активная способность штамма: то, ради чего в него вообще лезут.
+ * An active ability granted by a strain.
  * <p>
- * Правило мода — сила и её цена приходят вместе. У способности цена двойная: разовая
- * ({@link #cost()} в голоде и здоровье) и постоянная — перезарядка, на время которой
- * носитель остаётся с одними лишь ограничениями своего тела.
+ * Power comes with a cost. Using an ability spends hunger or health ({@link #cost()}) and starts a
+ * cooldown, during which the strain's restrictions still apply.
  * <p>
- * Апекс ({@link #apex()}) — единственная способность, которой мало полной формы: нужен ещё
- * полностью прочитанный геном вида.
+ * The apex ability ({@link #apex()}) requires both full form and complete research of the species.
  */
 public interface Ability {
     default AbilityRequirement requirement() { return AbilityRequirement.ANY; }
-    /** Тип способности — по нему она пишется в JSON и узнаётся при чтении. */
+    /** Ability type used to encode and decode JSON. */
     AbilityType<?> type();
 
-    /** Стадия, начиная с которой способность доступна. */
+    /** Earliest stage at which the ability is available. */
     Stage minStage();
 
-    /** Название для интерфейса. */
+    /** Name shown in the interface. */
     Component name();
 
-    /** Перезарядка в тиках. */
+    /** Cooldown in ticks. */
     int cooldown();
 
-    /** Цена одного применения. */
+    /** Cost per use. */
     Cost cost();
 
-    /** Апекс: требует полной формы и стопроцентной изученности вида. */
+    /** Apex abilities require full form and 100% research of the species. */
     boolean apex();
 
     /**
-     * Применить способность. Цена и перезарядка снимаются снаружи и только при успехе,
-     * поэтому неудачная попытка ничего не стоит.
+     * Try to activate the ability. The caller spends resources and starts the cooldown only on success.
      *
-     * @return false, если способность не сработала — например, не нашла цели
+     * @return false if the ability did not activate, for example if it found no target
      */
     boolean activate(ServerPlayer player, Stage stage);
 
-    /** Цена применения. Голод тратится первым, здоровье — только если голода не хватает. */
+    /** Cost of using the ability. Hunger is spent first and health is used only when hunger is insufficient. */
     record Cost(float hunger, float health) {
         public static final Cost FREE = new Cost(0.0F, 0.0F);
 

@@ -7,7 +7,7 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 
 import java.util.List;
 
-/** Проходы эффекта экрана: зрению существа нужно плавно менять параметры их шейдеров. */
+/** Expose post-processing passes so creature vision can interpolate their shader parameters. */
 @Mixin(PostChain.class)
 public interface PostChainAccessor {
     @Accessor("passes")

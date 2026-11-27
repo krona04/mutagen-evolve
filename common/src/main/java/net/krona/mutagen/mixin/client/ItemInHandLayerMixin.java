@@ -16,7 +16,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * Рука, которая стала ногой, ничего не держит: предмет не висит у её копыта.
+ * Skip held-item rendering once the arm has transformed into a leg.
  */
 @Mixin(ItemInHandLayer.class)
 public abstract class ItemInHandLayerMixin {

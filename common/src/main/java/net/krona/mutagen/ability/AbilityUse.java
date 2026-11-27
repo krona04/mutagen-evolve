@@ -5,11 +5,13 @@ import net.krona.mutagen.data.MutagenPlayer;
 import net.krona.mutagen.knowledge.MutagenKnowledge;
 import net.krona.mutagen.knowledge.Research;
 import net.krona.mutagen.network.MutagenNetwork;
+import net.krona.mutagen.network.MutagenNetwork.AbilityUsedPayload;
 import net.krona.mutagen.strain.Stage;
 import net.krona.mutagen.strain.Strain;
 import net.krona.mutagen.strain.Strains;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.food.FoodData;
 import org.jetbrains.annotations.Nullable;
@@ -19,25 +21,24 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.WeakHashMap;
-import net.minecraft.server.MinecraftServer;
 
 /**
- * Применение способности: проверки, цена и перезарядка.
+ * Validate, charge for, and apply cooldowns to ability uses.
  * <p>
- * Порядок важен: сначала всё, что может отказать, и только потом списание. Неудачная попытка
- * не стоит игроку ни голода, ни перезарядки — иначе промах по цели наказывал бы дважды.
+ * Validate and activate first, then charge the player. A miss costs neither hunger nor cooldown.
  */
 public final class AbilityUse {
     /**
-     * Игрок -> «штамм#номер» -> тик готовности. Номер без штамма не годится: у другого тела под тем
-     * же номером другая способность, и перезарядка волчьей стаи не должна держать разлом эндермена.
+     * Store timers by player, strain, and ability index. The same index can refer to different abilities on
+     * different strains.
      */
-    private static final Map<MinecraftServer, Map<UUID, Map<String, Long>>> COOLDOWNS = new WeakHashMap<>();
+    private static final Map<MinecraftServer, Map<UUID, Map<String, AbilityUsedPayload>>> COOLDOWNS =
+            new WeakHashMap<>();
 
     private AbilityUse() {
     }
 
-    /** Способности штамма игрока, в том порядке, в каком их нумерует клиент. */
+    /** Abilities for the player's strain in the order used by the client. */
     public static List<Ability> available(ServerPlayer player) {
         MutagenData.Gene gene = MutagenPlayer.of(player).primary();
         if (gene == null) {
@@ -76,12 +77,23 @@ public final class AbilityUse {
 
         pay(player, ability.cost());
         long ready = player.level().getGameTime() + ability.cooldown();
+        AbilityUsedPayload cooldown = new AbilityUsedPayload(strain.id(), index, ready, ability.cooldown());
         COOLDOWNS.computeIfAbsent(player.server, server -> new HashMap<>())
-                .computeIfAbsent(player.getUUID(), key -> new HashMap<>()).put(key(strain, index), ready);
-        MutagenNetwork.sendAbilityUsed(player, index, ability.cooldown());
+                .computeIfAbsent(player.getUUID(), key -> new HashMap<>()).put(key(strain, index), cooldown);
+        MutagenNetwork.sendAbilityUsed(player, cooldown);
     }
 
-    /** Ключ перевода причины отказа или null, если применять можно. */
+    /** Restore active cooldowns on reconnect, including those for the player's other strains. */
+    public static void syncCooldowns(ServerPlayer player) {
+        long now = player.level().getGameTime();
+        for (AbilityUsedPayload cooldown : cooldowns(player).values()) {
+            if (cooldown.remaining(now) > 0) {
+                MutagenNetwork.sendAbilityUsed(player, cooldown);
+            }
+        }
+    }
+
+    /** Translation key for the refusal reason, or null if the ability is allowed. */
     @Nullable
     private static String refuse(ServerPlayer player, Strain strain, Ability ability, Stage stage, int index) {
         if (!player.isAlive() || player.isSpectator()) return "mutagen.ability.unavailable";
@@ -104,7 +116,7 @@ public final class AbilityUse {
         return null;
     }
 
-    /** Сколько тиков перезарядки осталось у способности текущего штамма. */
+    /** Remaining cooldown in ticks for an ability of the current strain. */
     public static long remaining(ServerPlayer player, int index) {
         MutagenData.Gene gene = MutagenPlayer.of(player).primary();
         Strain strain = gene == null ? null : Strains.get(gene.strainId());
@@ -112,13 +124,13 @@ public final class AbilityUse {
     }
 
     private static long remaining(ServerPlayer player, Strain strain, int index) {
-        Map<UUID, Map<String, Long>> byPlayer = COOLDOWNS.get(player.server);
-        Map<String, Long> byKey = byPlayer == null ? null : byPlayer.get(player.getUUID());
-        if (byKey == null) {
-            return 0L;
-        }
-        Long ready = byKey.get(key(strain, index));
-        return ready == null ? 0L : Math.max(0L, ready - player.level().getGameTime());
+        AbilityUsedPayload cooldown = cooldowns(player).get(key(strain, index));
+        return cooldown == null ? 0L : cooldown.remaining(player.level().getGameTime());
+    }
+
+    private static Map<String, AbilityUsedPayload> cooldowns(ServerPlayer player) {
+        Map<UUID, Map<String, AbilityUsedPayload>> byPlayer = COOLDOWNS.get(player.server);
+        return byPlayer == null ? Map.of() : byPlayer.getOrDefault(player.getUUID(), Map.of());
     }
 
     private static String key(Strain strain, int index) {
@@ -132,7 +144,7 @@ public final class AbilityUse {
         FoodData food = player.getFoodData();
         boolean enoughFood = cost.hunger() <= 0.0F
                 || AbilityBudget.food(food.getFoodLevel(), food.getSaturationLevel(), cost.hunger()) != null;
-        // Здоровьем платят до последнего сердца, но не жизнью.
+        // Keep the player alive when charging a health cost.
         boolean enoughHealth = cost.health() <= 0.0F || AbilityBudget.healthAvailable(player.getHealth(), cost.health());
         return enoughFood && enoughHealth;
     }

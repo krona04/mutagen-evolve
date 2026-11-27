@@ -23,7 +23,7 @@ public final class MutagenItems {
     public static final RegistrySupplier<Item> SYRINGE = ITEMS.register("syringe",
             () -> new SyringeItem(new Item.Properties().stacksTo(16), 0.0F, false));
 
-    /** Золотой шприц не тратится на каждый образец и берёт материал бережнее. */
+    /** The gold syringe is reusable and collects cleaner samples. */
     public static final RegistrySupplier<Item> GOLDEN_SYRINGE = ITEMS.register("golden_syringe",
             () -> new SyringeItem(new Item.Properties().durability(32), 10.0F, true));
 

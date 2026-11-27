@@ -21,12 +21,11 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * Индикатор мутации: компактная панель со штаммом, стадией, прогрессом, запасом усвоения и способностями.
- * Игрок должен понимать, что с ним происходит, не открывая команд.
+ * The mutation HUD shows strain, stage, progress, pending absorption, and abilities without requiring a
+ * command.
  * <p>
- * Панель стоит в углу, который выбран в настройке {@code hudCorner} (по умолчанию верхний левый): внизу
- * слева её закрывал чат. Если в том же углу открыт экран отладки или иконки эффектов, панель уходит
- * от них, а не рисуется поверх.
+ * Use the corner selected by {@code hudCorner}, top left by default. Chat overlaps the bottom-left corner.
+ * Move the HUD when debug information or effect icons occupy the same corner.
  */
 @Environment(EnvType.CLIENT)
 public final class MutagenHud {
@@ -79,7 +78,7 @@ public final class MutagenHud {
         int x = right ? graphics.guiWidth() - WIDTH - MARGIN : MARGIN;
         int y = bottom ? graphics.guiHeight() - height - MARGIN : MARGIN + topOffset(minecraft, right, bottom);
 
-        // Фон и тонкая полоса цвета штамма слева — видно, чей это ген, ещё до того, как прочитано название.
+        // Draw a background and a thin stripe in the strain's color.
         graphics.fill(x, y, x + WIDTH, y + height, PANEL);
         graphics.renderOutline(x, y, WIDTH, height, EDGE);
         graphics.fill(x, y, x + 2, y + height, 0xFF000000 | strain.color());
@@ -88,7 +87,7 @@ public final class MutagenHud {
         int inner = WIDTH - PADDING * 2 - 2;
         int row = y + PADDING;
 
-        // Название штамма и стадия справа, цветом стадии.
+        // Show the strain name and the stage on the right in its stage color.
         Stage stage = gene.stage();
         Component numeral = Component.literal(stage.numeral()).withStyle(stage.color());
         int numeralWidth = font.width(numeral);
@@ -100,7 +99,7 @@ public final class MutagenHud {
         graphics.drawString(font, numeral, left + inner - numeralWidth, row, TEXT, true);
         row += ROW;
 
-        // Прогресс и запас усвоения, с процентом справа.
+        // Show progress and pending absorption with the percentage on the right.
         String percent = Math.round(gene.progress()) + "%";
         int percentWidth = font.width(percent);
         int barWidth = inner - percentWidth - 4;
@@ -112,7 +111,7 @@ public final class MutagenHud {
             graphics.fill(left + progress, barY, left + pending, barY + BAR_HEIGHT, tint(strain.color(), 110));
         }
         graphics.fill(left, barY, left + progress, barY + BAR_HEIGHT, 0xFF000000 | strain.color());
-        // Отметки стадий: видно, сколько осталось до следующей.
+        // Mark stage thresholds so the next one is visible.
         for (Stage mark : Stage.values()) {
             if (mark.threshold() > 1 && mark.threshold() < 100) {
                 int markX = left + barWidth * mark.threshold() / 100;
@@ -132,9 +131,8 @@ public final class MutagenHud {
     }
 
     /**
-     * Способности: клавиша в рамке, название и перезарядка — полосой под строкой и секундами справа.
-     * Ещё не открытые показаны тускло со стадией, с которой они придут, — видно, что тело ещё не
-     * доросло, а не что их нет вовсе.
+     * Show each key, ability name, cooldown bar, and remaining seconds. Dim locked abilities and show the
+     * stage at which they unlock.
      */
     private static void renderAbilities(GuiGraphics graphics, Font font, Minecraft minecraft, MutagenData.Gene gene,
                                         List<ClientAbilities.Slot> slots, int x, int y, int width, int color) {
@@ -156,15 +154,15 @@ public final class MutagenHud {
             boolean ready = slot.unlocked() && seconds == 0;
             int textColor = !slot.unlocked() ? LOCKED : ready ? TEXT : COOLING;
 
-            // Клавиша в рамке.
+            // Draw the key in a frame.
             String shortKey = font.plainSubstrByWidth(key.toUpperCase(Locale.ROOT), 18);
             int keyWidth = Math.max(9, font.width(shortKey) + 4);
             graphics.fill(x, row, x + keyWidth, row + 9, ready ? tint(color, 200) : 0xFF303030);
             graphics.drawString(font, shortKey, x + (keyWidth - font.width(shortKey)) / 2 + 1, row + 1,
                     ready ? 0xFF101010 : textColor, false);
 
-            // Справа: секунды перезарядки, звезда апекса или настоящая причина, по которой способность
-            // сейчас недоступна, — стадия, изученность генома, среда или нехватка сил.
+            // On the right, show cooldown seconds, an apex star, or the current restriction such as stage,
+            // research, environment, or missing resources.
             String status = seconds > 0 ? seconds + "s"
                     : slot.unlocked() ? (slot.ability().apex() ? "★" : "") : reason(minecraft, gene, slot);
             int statusWidth = font.width(status);
@@ -185,7 +183,7 @@ public final class MutagenHud {
         }
     }
 
-    /** Короткая метка причины, по которой способность сейчас недоступна. */
+    /** Short label explaining why an ability is currently unavailable. */
     private static String reason(Minecraft minecraft, MutagenData.Gene gene, ClientAbilities.Slot slot) {
         net.krona.mutagen.ability.Ability ability = slot.ability();
         if (!gene.stage().atLeast(ability.minStage())) {
@@ -206,13 +204,13 @@ public final class MutagenHud {
                 case ANY -> "";
             };
         }
-        // Остаётся одно: не хватает сытости или здоровья.
+        // The remaining requirement is enough hunger or health.
         return "♥";
     }
 
     /**
-     * Угол из настройки. Экран отладки занимает верхние углы целиком: пока он открыт, панель уходит вниз
-     * в правый угол, где кроме подсказок ничего нет.
+     * Use the configured corner. While the debug screen occupies both upper corners, move to the bottom
+     * right.
      */
     private static String corner(Minecraft minecraft, boolean debug) {
         String corner = MutagenConfig.get().hudCorner == null ? "top_left"
@@ -226,7 +224,7 @@ public final class MutagenHud {
         return corner;
     }
 
-    /** Справа сверху ваниль рисует иконки эффектов: панель встаёт под них. */
+    /** Place the HUD below vanilla status-effect icons in the upper-right corner. */
     private static int topOffset(Minecraft minecraft, boolean right, boolean bottom) {
         if (!right || bottom || minecraft.player == null) {
             return 0;

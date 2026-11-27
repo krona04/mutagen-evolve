@@ -10,8 +10,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
- * Тело, которому нечем строить, блоков не ставит. Сундуки, двери и рычаги при этом открываются:
- * запрещена только установка блока.
+ * Prevent players without the required hands from placing blocks. Chests, doors, and levers remain usable.
  */
 @Mixin(BlockItem.class)
 public abstract class BlockItemMixin {

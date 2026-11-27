@@ -6,7 +6,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 import org.spongepowered.asm.mixin.gen.Invoker;
 
-/** Загрузка эффекта экрана — тот же путь, что у ванили для взгляда крипера в режиме зрителя. */
+/** Load a screen effect through the same renderer used by vanilla spectator vision. */
 @Mixin(GameRenderer.class)
 public interface GameRendererInvoker {
     @Invoker("loadEffect")

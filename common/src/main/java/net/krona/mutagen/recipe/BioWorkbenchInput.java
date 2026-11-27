@@ -7,7 +7,7 @@ import net.minecraft.world.item.crafting.RecipeInput;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Содержимое ячеек верстака биолога для поиска рецепта. */
+/** Contents of the bio workbench slots for recipe lookup. */
 public record BioWorkbenchInput(List<ItemStack> items) implements RecipeInput {
     public static BioWorkbenchInput of(Container container) {
         List<ItemStack> items = new ArrayList<>(container.getContainerSize());

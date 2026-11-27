@@ -3,6 +3,8 @@
 build/
 out/
 classes/
+/.gradle-local/
+/logs/
 
 # idea
 .idea/
@@ -28,6 +30,6 @@ run-data/
 */run/
 .architectury-transformer/
 
-# локальные логи дымовых тестов
+# Local smoke test logs
 server-test.log
 neoforge-test.log

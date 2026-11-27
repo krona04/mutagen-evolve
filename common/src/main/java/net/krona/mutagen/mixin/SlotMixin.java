@@ -15,8 +15,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
- * Запертые ячейки инвентаря носителя: в них нельзя положить и из них нельзя взять. Работает в любом
- * меню, где есть инвентарь игрока, — и в своём, и у сундука, и у верстака.
+ * Block placing and taking items in locked player slots in any inventory menu.
  */
 @Mixin(Slot.class)
 public abstract class SlotMixin {
@@ -33,7 +32,7 @@ public abstract class SlotMixin {
             cir.setReturnValue(false);
             return;
         }
-        // Сетка 2×2 в инвентаре — тоже мелкая работа: без пальцев в неё ничего не положить.
+        // Handless players cannot place items in the inventory's 2×2 crafting grid.
         if (container instanceof TransientCraftingContainer grid
                 && ((TransientCraftingContainerAccessor) grid).mutagen$getMenu() instanceof InventoryMenu menu) {
             Player owner = ((InventoryMenuAccessor) menu).mutagen$getOwner();

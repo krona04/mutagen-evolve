@@ -6,7 +6,7 @@ import net.krona.mutagen.MutagenConfig;
 import org.slf4j.Logger;
 
 /**
- * Выбор прослойки тела. Pehkui берётся, если он установлен и не выключен в конфиге ({@code pehkuiIntegration}).
+ * Select the body scaler. Use Pehkui if it is installed and enabled by {@code pehkuiIntegration}.
  */
 public final class Bodies {
     private static final Logger LOGGER = LogUtils.getLogger();
@@ -40,8 +40,8 @@ public final class Bodies {
     }
 
     /**
-     * Считает ли мод хитбокс сам. Спрашивается из миксина размеров, в том числе на клиенте: Pehkui на
-     * клиенте стоит, только если стоит и на сервере, так что ответ на обеих сторонах совпадает.
+     * Whether Mutagen calculates the hitbox. The player dimensions mixin checks on both sides. If the
+     * server uses Pehkui, the client also has it, so the result matches.
      */
     public static boolean ownsDimensions() {
         return scaler().ownsDimensions();

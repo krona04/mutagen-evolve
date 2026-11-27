@@ -10,7 +10,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 
 /**
- * Общий экран лабораторной машины: фон, стрелка прогресса и огонь под топливом.
+ * Shared lab machine screen for the background, progress arrow, and fuel flame.
  */
 @Environment(EnvType.CLIENT)
 public abstract class MachineScreen<T extends MachineMenu> extends AbstractContainerScreen<T> {
@@ -50,7 +50,7 @@ public abstract class MachineScreen<T extends MachineMenu> extends AbstractConta
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        // Затемнение позади окна рисует сам AbstractContainerScreen — второй раз его звать не нужно.
+        // AbstractContainerScreen already draws the dimmed background.
         super.render(graphics, mouseX, mouseY, partialTick);
         renderTooltip(graphics, mouseX, mouseY);
     }

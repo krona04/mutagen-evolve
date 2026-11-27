@@ -1,10 +1,18 @@
 import com.google.gson.*;
 import com.mojang.serialization.JsonOps;
+import io.netty.buffer.Unpooled;
 import net.krona.mutagen.ability.*;
+import net.krona.mutagen.data.MutagenData;
+import net.krona.mutagen.network.MutagenNetwork.AbilityUsedPayload;
+import net.krona.mutagen.network.MutagenNetwork.SyncPayload;
 import net.krona.mutagen.strain.*;
 import net.minecraft.SharedConstants;
+import net.minecraft.core.RegistryAccess;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.Bootstrap;
 import java.nio.file.*;
+import java.util.List;
 
 /** Real registry/codec checks plus regressions for energy, contact targets and environment gates. */
 public final class GameplayBalanceCheck {
@@ -39,6 +47,7 @@ public final class GameplayBalanceCheck {
         check(!AbilityRequirement.AIRBORNE.allows(true,false,false,false,15), "Swimming is not diving flight");
         check(!AbilityRequirement.DARK.allows(false,false,true,false,8), "Night veil light boundary");
         check(AbilityRequirement.DARK.allows(false,false,true,false,7), "Night veil in darkness");
+        checkPlayerSync();
         Path resources=Path.of("common/src/main/resources");
         JsonObject en=JsonParser.parseString(Files.readString(resources.resolve("assets/mutagen/lang/en_us.json"))).getAsJsonObject();
         JsonObject ru=JsonParser.parseString(Files.readString(resources.resolve("assets/mutagen/lang/ru_ru.json"))).getAsJsonObject();
@@ -96,5 +105,59 @@ public final class GameplayBalanceCheck {
         }
         check(strains==12&&abilities==36,"Complete shipped roster");
         System.out.println("Gameplay checks passed: "+checks+" checks, "+strains+" strains, "+abilities+" abilities.");
+    }
+
+    private static void checkPlayerSync() {
+        ResourceLocation activeId = ResourceLocation.parse("mutagen:active");
+        ResourceLocation dormantId = ResourceLocation.parse("mutagen:dormant");
+        ResourceLocation emptyId = ResourceLocation.parse("mutagen:empty");
+        ResourceLocation pendingId = ResourceLocation.parse("mutagen:pending");
+        Strain active = Strain.CODEC.parse(JsonOps.INSTANCE, JsonParser.parseString(
+                """
+                {"id":"mutagen:active","entity":"minecraft:zombie","synthesis":{"catalyst":"minecraft:slime_ball"}}
+                """)).getOrThrow();
+        MutagenData saved = new MutagenData();
+        saved.getOrCreate(activeId).setProgress(25.0F);
+        saved.getOrCreate(dormantId).setProgress(100.0F);
+        saved.getOrCreate(emptyId).setLocked(true);
+        saved.getOrCreate(pendingId).setPending(5.0F);
+        for (int i = 0; i < 14; i++) {
+            saved.getOrCreate(ResourceLocation.fromNamespaceAndPath("mutagen", "extra_" + i)).setProgress(50.0F);
+        }
+        MutagenData loaded = new MutagenData();
+        loaded.load(saved.save());
+        check(loaded.gene(emptyId) == null, "Legacy empty gene no longer occupies a slot");
+        check(loaded.gene(pendingId).pending() == 5.0F, "Unabsorbed doses survive loading");
+        Strains.replace(List.of(active));
+        try {
+            check(loaded.activeGeneCount() == 1, "Missing strains do not count toward the gene limit");
+            check(loaded.primary().strainId().equals(activeId), "A missing full form cannot mask a loaded strain");
+            check(loaded.gene(dormantId).progress() == 100.0F, "Missing strains retain their progress");
+        } finally {
+            Strains.replace(List.of());
+        }
+
+        var dataBuffer = new RegistryFriendlyByteBuf(Unpooled.buffer(), RegistryAccess.EMPTY);
+        try {
+            SyncPayload.STREAM_CODEC.encode(dataBuffer, new SyncPayload(1, loaded.snapshot()));
+            SyncPayload decoded = SyncPayload.STREAM_CODEC.decode(dataBuffer);
+            check(decoded.genes().size() == 17, "More than 16 saved genes survive network encoding");
+
+            AbilityUsedPayload timer = new AbilityUsedPayload(activeId, 2, 3_000_000_200L, 200);
+            AbilityUsedPayload.STREAM_CODEC.encode(dataBuffer, timer);
+            AbilityUsedPayload restored = AbilityUsedPayload.STREAM_CODEC.decode(dataBuffer);
+            check(restored.equals(timer), "Cooldown packet preserves strain and world tick");
+            check(restored.remaining(3_000_000_050L) == 150, "Reconnect restores remaining cooldown, not its full duration");
+            check(restored.remaining(3_000_000_200L) == 0, "Expired cooldown is ready");
+        } finally {
+            dataBuffer.release();
+        }
+
+        ResourceLocation shader = ResourceLocation.parse("mutagen:shaders/post/test.json");
+        Strain.Vision fullOnly = new Strain.Vision(shader, Stage.FULL);
+        check(fullOnly.strength(99.0F) == 0.0F, "Full-only vision stays off below full form");
+        check(fullOnly.strength(100.0F) == 1.0F, "Full-only vision turns on at full form");
+        check(new Strain.Vision(shader, Stage.MANIFESTATION).strength(100.0F) == 1.0F,
+                "Existing gradual vision still reaches full intensity");
     }
 }

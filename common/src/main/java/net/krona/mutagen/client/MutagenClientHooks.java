@@ -25,7 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Приём серверных пакетов на клиенте.
+ * Handle server packets on the client.
  */
 @Environment(EnvType.CLIENT)
 public final class MutagenClientHooks {
@@ -47,11 +47,11 @@ public final class MutagenClientHooks {
                 Stage stageBefore = before == null ? Stage.NONE : before.stage();
                 data.applySnapshot(payload.genes());
                 MutagenData.Gene after = data.primary();
-                // Стадия выросла — тело выкручивает. Видят все, кто смотрит, а не только сам носитель.
+                // Start a body convulsion when the stage increases so nearby players see it too.
                 if (after != null && after.stage().ordinal() > stageBefore.ordinal() && stageBefore != Stage.NONE) {
                     BodyMotion.startConvulsion(player);
                 }
-                // Хитбокс и глаза считаются из прогресса: клиент пересчитывает их сам, как и сервер.
+                // Recalculate hitbox and eye height from progress on the client as on the server.
                 Mutation.refreshDimensions(player);
             }
         });
@@ -69,8 +69,8 @@ public final class MutagenClientHooks {
 
     public static void handleStrains(MutagenNetwork.StrainsPayload payload, NetworkManager.PacketContext context) {
         context.queue(() -> {
-            // В одиночной игре сервер живёт в том же процессе и уже держит этот набор:
-            // подменять его копией незачем.
+            // Singleplayer shares the server's strain registry in the same process, so there is no need to
+            // replace it.
             if (Minecraft.getInstance().hasSingleplayerServer()) {
                 return;
             }
@@ -84,10 +84,10 @@ public final class MutagenClientHooks {
         });
     }
 
-    /** Сервер применил способность: заводим таймер, чтобы нарисовать перезарядку. */
+    /** Receive a server cooldown timer. */
     public static void handleAbilityUsed(MutagenNetwork.AbilityUsedPayload payload,
                                          NetworkManager.PacketContext context) {
-        context.queue(() -> ClientAbilities.startCooldown(payload.index(), payload.cooldown()));
+        context.queue(() -> ClientAbilities.startCooldown(payload));
     }
 
     public static void handleKnowledge(MutagenNetwork.KnowledgePayload payload, NetworkManager.PacketContext context) {

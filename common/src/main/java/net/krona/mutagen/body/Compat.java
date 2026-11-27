@@ -8,8 +8,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Сводка о модах, с которыми Mutagen умеет или обязан уживаться (0.3.1). Ничего не меняет — только
- * пишет в лог, что найдено и как мод себя поведёт, чтобы в отчёте об ошибке это было видно сразу.
+ * Log compatible mods and how Mutagen will behave with them so crash reports include the active
+ * integrations (0.3.1).
  */
 public final class Compat {
     private static final Logger LOGGER = LogUtils.getLogger();

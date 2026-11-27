@@ -12,10 +12,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
- * Иммунитеты к эффектам, лазание по стенам и удары носителя по мобам.
+ * Effect immunity, wall climbing, and attacks by mutated players against mobs.
  * <p>
- * Урон по самому носителю здесь не трогается: игрок переопределяет {@code actuallyHurt} целиком
- * и до этой версии метода не доходит. Его урон правит {@link PlayerMixin}.
+ * Player overrides {@code actuallyHurt}. Incoming player damage is handled by {@link PlayerMixin}.
  */
 @Mixin(LivingEntity.class)
 public abstract class LivingEntityMixin {
@@ -31,7 +30,7 @@ public abstract class LivingEntityMixin {
                 && net.krona.mutagen.mutation.AquaticAdaptation.dependent(player)
                 && !net.krona.mutagen.mutation.AquaticAdaptation.wet(player)) cir.setReturnValue(air);
     }
-    /** Удар по мобу: черты носителя-нападающего вроде яда пчелы. */
+    /** Apply the attacker's traits, such as bee venom, when they hit a mob. */
     @Inject(method = "actuallyHurt", at = @At("HEAD"))
     private void mutagen$melee(DamageSource source, float amount, CallbackInfo ci) {
         Mutation.onDamaged((LivingEntity) (Object) this, source);
@@ -45,8 +44,8 @@ public abstract class LivingEntityMixin {
     }
 
     /**
-     * Стена считается лестницей, пока носитель в неё упирается. Движение игрока считает клиент,
-     * поэтому проверка идёт на обеих сторонах — обе знают штамм и стадию.
+     * Treat a wall the player presses against as climbable. Client and server both know the strain and
+     * stage, so run the check on both sides.
      */
     @Inject(method = "onClimbable", at = @At("HEAD"), cancellable = true)
     private void mutagen$climbWalls(CallbackInfoReturnable<Boolean> cir) {

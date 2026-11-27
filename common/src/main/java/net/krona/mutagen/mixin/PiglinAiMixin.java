@@ -11,9 +11,8 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
- * Пиглины думают мозгом, а не целью моба, и отказ от цели в {@link MobMixin} до них не доходит.
- * Зато у них есть готовое правило «свой — тот, кто в золоте»: носитель, которого пиглины
- * признали своим, для них всегда в золоте. Тронет их золото — разозлятся, как на любого.
+ * Piglins use a brain, so {@link MobMixin}'s target check does not cover them. The existing gold rule
+ * treats recognized players as wearing gold. Taking gold still angers piglins.
  */
 @Mixin(PiglinAi.class)
 public abstract class PiglinAiMixin {

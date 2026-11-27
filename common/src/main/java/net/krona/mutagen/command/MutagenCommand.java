@@ -38,8 +38,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Отладочные команды прототипа: посмотреть состояние, ввести дозу, выставить прогресс.
- * Нужны, потому что честный путь до пятой стадии занимает игровые дни.
+ * Prototype debug commands for inspecting mutation, applying a dose, and setting progress. Normal gameplay
+ * takes several in-game days to reach full form.
  */
 public final class MutagenCommand {
     private static final SuggestionProvider<CommandSourceStack> STRAIN_SUGGESTIONS =
@@ -188,7 +188,7 @@ public final class MutagenCommand {
         if (strain == null) {
             return 0;
         }
-        // Отладочная доза не упирается в изученность: ей нужно проверять трансформацию, а не науку.
+        // Debug doses bypass research limits so they can test transformation.
         Mutation.dose(player, strain.id(), quality, GeneData.NO_LIMIT);
         return 1;
     }
@@ -202,10 +202,14 @@ public final class MutagenCommand {
         float progress = FloatArgumentType.getFloat(context, "progress");
 
         MutagenData data = MutagenPlayer.of(player);
-        MutagenData.Gene gene = data.getOrCreate(strain.id());
-        gene.setProgress(progress);
-        gene.setPending(0.0F);
-        data.markDirty();
+        if (progress == 0.0F) {
+            data.remove(strain.id());
+        } else {
+            MutagenData.Gene gene = data.getOrCreate(strain.id());
+            gene.setProgress(progress);
+            gene.setPending(0.0F);
+            data.markDirty();
+        }
         Mutation.refreshAttributes(player, data);
         MutagenNetwork.syncPlayer(player);
 
@@ -242,7 +246,7 @@ public final class MutagenCommand {
         return 1;
     }
 
-    /** Что умеет нынешний штамм и на какой стадии это открывается. */
+    /** List the current strain's abilities and their unlock stages. */
     private static int abilities(CommandContext<CommandSourceStack> context)
             throws com.mojang.brigadier.exceptions.CommandSyntaxException {
         ServerPlayer player = context.getSource().getPlayerOrException();
@@ -262,7 +266,7 @@ public final class MutagenCommand {
         return abilities.size();
     }
 
-    /** Применить способность по номеру: то же, что нажать её клавишу. */
+    /** Activate an ability by index, like pressing its key. */
     private static int use(CommandContext<CommandSourceStack> context)
             throws com.mojang.brigadier.exceptions.CommandSyntaxException {
         ServerPlayer player = context.getSource().getPlayerOrException();
@@ -273,7 +277,7 @@ public final class MutagenCommand {
     private static Strain strainArgument(CommandContext<CommandSourceStack> context) {
         ResourceLocation id = ResourceLocationArgument.getId(context, "strain");
         Strain strain = Strains.get(id);
-        // Короткая запись: /mutagen set zombie 50 вместо mutagen:zombie.
+        // Use /mutagen set zombie 50 as shorthand for specifying mutagen:zombie.
         if (strain == null && id.getNamespace().equals(ResourceLocation.DEFAULT_NAMESPACE)) {
             strain = Strains.get(Mutagen.id(id.getPath()));
         }

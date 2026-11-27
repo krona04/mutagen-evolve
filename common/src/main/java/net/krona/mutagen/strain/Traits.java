@@ -51,11 +51,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 /**
- * Типы черт, из которых собираются штаммы в датапаках. Каждая сильная сторона здесь соседствует
- * со своей ценой: правило мода — способность и слабость приходят в одной версии.
+ * Trait types available to datapack strains. Strengths and their costs ship together.
  * <p>
- * Общие поля у всех типов: {@code "from_stage"} — стадия, с которой черта работает, и
- * необязательное {@code "description"} — ключ перевода, если стандартное описание не подходит.
+ * All trait types have {@code "from_stage"} and an optional {@code "description"} translation key to
+ * override the default.
  */
 public final class Traits {
     public static final TraitType<Attr> ATTRIBUTE = TraitType.register("attribute", Attr.CODEC);
@@ -98,7 +97,7 @@ public final class Traits {
     public static final TraitType<AquaticBody> AQUATIC_BODY = TraitType.register("aquatic_body", AquaticBody.CODEC);
     public static final TraitType<WaterDependence> WATER_DEPENDENCE = TraitType.register("water_dependence", WaterDependence.CODEC);
 
-    /** Любая черта: поле {@code "type"} выбирает формат остальных полей. */
+    /** The {@code "type"} field determines how to decode the remaining trait fields. */
     public static final Codec<Trait> CODEC = TraitType.CODEC.dispatch("type", Trait::type, TraitType::codec);
 
     private Traits() {
@@ -132,7 +131,7 @@ public final class Traits {
         return key.<Component>map(Component::translatable).orElse(fallback);
     }
 
-    /** Постоянный модификатор атрибута. */
+    /** Persistent attribute modifier. */
     public record Attr(Stage minStage, Holder<Attribute> attribute, double amount,
                        AttributeModifier.Operation operation, Optional<String> descriptionKey) implements Trait {
         static final MapCodec<Attr> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
@@ -160,7 +159,8 @@ public final class Traits {
 
         @Override
         public boolean weakness() {
-            // Атрибут сам знает, хорошо ли ему расти: меньше здоровья — плохо, меньше урона от падения — хорошо.
+            // The attribute defines which direction is beneficial. Less max health is harmful, while less
+            // fall damage is beneficial.
             return attribute.value().getStyle(amount > 0.0D) == ChatFormatting.RED;
         }
 
@@ -170,7 +170,7 @@ public final class Traits {
         }
     }
 
-    /** Горение на солнце: цена всей нежити. */
+    /** Sunlight burn for undead strains. */
     public record SunBurn(Stage minStage) implements Trait {
         static final MapCodec<SunBurn> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
                 stage(SunBurn::minStage)
@@ -211,7 +211,7 @@ public final class Traits {
         }
     }
 
-    /** Регенерация в темноте. */
+    /** Regeneration in darkness. */
     public record DarknessRegeneration(Stage minStage, int amplifier, int maxLight) implements Trait {
         static final MapCodec<DarknessRegeneration> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
                 stage(DarknessRegeneration::minStage),
@@ -239,7 +239,7 @@ public final class Traits {
         }
     }
 
-    /** Иммунитет к набору эффектов. */
+    /** Immunity to a set of effects. */
     public record EffectImmunity(Stage minStage, List<Holder<MobEffect>> effects,
                                  Optional<String> descriptionKey) implements Trait {
         static final MapCodec<EffectImmunity> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
@@ -272,7 +272,7 @@ public final class Traits {
         }
     }
 
-    /** Множитель урона от определённого типа: иммунитеты и уязвимости. */
+    /** Damage multiplier for a specified type, including immunity and vulnerability. */
     public record DamageFactor(Stage minStage, TagKey<DamageType> damageType, float factor,
                                Optional<String> descriptionKey) implements Trait {
         static final MapCodec<DamageFactor> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
@@ -304,7 +304,7 @@ public final class Traits {
         }
     }
 
-    /** Паника рядом с котами: цена крипера. */
+    /** Panic near cats for the creeper strain. */
     public record CatFear(Stage minStage, double radius) implements Trait {
         static final MapCodec<CatFear> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
                 stage(CatFear::minStage),
@@ -339,7 +339,7 @@ public final class Traits {
         }
     }
 
-    /** На высоких стадиях тело больше не носит броню. */
+    /** Prevent wearing armor at higher stages. */
     public record ArmorRejection(Stage minStage, List<EquipmentSlot> slots,
                                  Optional<String> descriptionKey) implements Trait {
         private static final List<EquipmentSlot> ALL_ARMOR =
@@ -391,7 +391,7 @@ public final class Traits {
         }
     }
 
-    /** Стрелы носителя бьют сильнее. Применяется при появлении стрелы в мире. */
+    /** Increase arrow damage when the arrow enters the world. */
     public record ArrowPower(Stage minStage, double factor) implements Trait {
         static final MapCodec<ArrowPower> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
                 stage(ArrowPower::minStage),
@@ -414,9 +414,9 @@ public final class Traits {
         }
     }
 
-    // --- Тело без рук. Сами запреты проверяет Restrictions: черты только говорят, что действует. ---
+    // --- Handless traits declare restrictions that Restrictions enforces. ---
 
-    /** Вторая рука пропадает: из неё ничего не удержать. */
+    /** Disable the offhand. */
     public record NoOffhand(Stage minStage) implements Trait {
         static final MapCodec<NoOffhand> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
                 stage(NoOffhand::minStage)
@@ -438,7 +438,7 @@ public final class Traits {
         }
     }
 
-    /** До рюкзака не дотянуться, а на поясе остаётся {@code hotbar} ячеек. */
+    /** Lock the main inventory and leave {@code hotbar} slots accessible. */
     public record InventoryLimit(Stage minStage, int hotbar) implements Trait {
         static final MapCodec<InventoryLimit> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
                 stage(InventoryLimit::minStage),
@@ -461,7 +461,7 @@ public final class Traits {
         }
     }
 
-    /** Инструменты и оружие держать нечем. Какие именно — тег предметов {@code mutagen:needs_hands}. */
+    /** Prevent use of tools and weapons tagged {@code mutagen:needs_hands}. */
     public record NoTools(Stage minStage) implements Trait {
         static final MapCodec<NoTools> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
                 stage(NoTools::minStage)
@@ -484,8 +484,8 @@ public final class Traits {
     }
 
     /**
-     * Мелкая работа недоступна: станки из тега {@code stations} (по умолчанию {@code mutagen:needs_hands}),
-     * а с {@code grid} — и сетка крафта в инвентаре.
+     * Disable stations in {@code stations}, which defaults to {@code mutagen:needs_hands}. Enable {@code
+     * grid} to disable the inventory crafting grid too.
      */
     public record NoCrafting(Stage minStage, TagKey<Block> stations, boolean grid,
                              Optional<String> descriptionKey) implements Trait {
@@ -513,7 +513,7 @@ public final class Traits {
         }
     }
 
-    /** Строить нечем: блоки не ставятся. */
+    /** Prevent placing blocks when the body cannot build. */
     public record NoBuilding(Stage minStage) implements Trait {
         static final MapCodec<NoBuilding> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
                 stage(NoBuilding::minStage)
@@ -535,7 +535,7 @@ public final class Traits {
         }
     }
 
-    /** Тело больше не отдыхает: в кровать не лечь. */
+    /** Prevent sleeping in beds. */
     public record NoSleep(Stage minStage) implements Trait {
         static final MapCodec<NoSleep> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
                 stage(NoSleep::minStage)
@@ -557,7 +557,7 @@ public final class Traits {
         }
     }
 
-    /** Тело принимает только еду из тега {@code foods}, остальное не лезет. */
+    /** Allow only foods in the {@code foods} tag. */
     public record Diet(Stage minStage, TagKey<Item> foods, Optional<String> descriptionKey) implements Trait {
         static final MapCodec<Diet> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
                 stage(Diet::minStage),
@@ -583,8 +583,8 @@ public final class Traits {
     }
 
     /**
-     * Нечем переваривать: есть нельзя вовсе, а сытость застывает на {@code food_level}. Голодом не умереть,
-     * но и естественного лечения нет, если уровень ниже 18.
+     * Disable eating and freeze hunger at {@code food_level}. This prevents starvation, but natural healing
+     * still requires at least 18 food points.
      */
     public record NoEating(Stage minStage, int foodLevel) implements Trait {
         static final MapCodec<NoEating> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
@@ -609,8 +609,8 @@ public final class Traits {
     }
 
     /**
-     * Эффект, который держится, пока держится стадия. Обновляется каждую секунду с запасом,
-     * чтобы ночное зрение не мигало на исходе.
+     * Refresh the effect every second while the trait is active. Leave enough duration to prevent night
+     * vision from flickering.
      */
     public record PermanentEffect(Stage minStage, Holder<MobEffect> effect, int amplifier,
                                   Optional<String> descriptionKey) implements Trait {
@@ -639,8 +639,7 @@ public final class Traits {
     }
 
     /**
-     * Свои больше не нападают. Плата за облик, которая наконец работает в плюс: чем дальше зашла
-     * трансформация, тем спокойнее к носителю относится его новый вид.
+     * The creature species stops attacking once it recognizes the player at the required stage.
      */
     public record MobNeutrality(Stage minStage, Optional<TagKey<EntityType<?>>> kin, List<EntityType<?>> entities,
                                 Optional<String> descriptionKey) implements Trait {
@@ -671,7 +670,7 @@ public final class Traits {
         }
     }
 
-    /** Лазание по стенам: упёрся в стену — лезешь вверх, присел — держишься. Как паук. */
+    /** Climb like a spider by pressing against a wall. Crouch to hold position. */
     public record WallClimb(Stage minStage, Optional<String> descriptionKey) implements Trait {
         static final MapCodec<WallClimb> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
                 stage(WallClimb::minStage),
@@ -694,7 +693,7 @@ public final class Traits {
         }
     }
 
-    /** Паутина не держит: тело само из неё соткано. */
+    /** Move through cobwebs without getting stuck. */
     public record WebWalker(Stage minStage, Optional<String> descriptionKey) implements Trait {
         static final MapCodec<WebWalker> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
                 stage(WebWalker::minStage),
@@ -717,7 +716,7 @@ public final class Traits {
         }
     }
 
-    /** Вода жжёт: в воде, а с {@code rain} и под дождём, каждую секунду идёт урон. */
+    /** Take damage each second in water and, if {@code rain} is enabled, in rain. */
     public record WaterDamage(Stage minStage, float amount, boolean rain,
                               Optional<String> descriptionKey) implements Trait {
         static final MapCodec<WaterDamage> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
@@ -753,14 +752,13 @@ public final class Traits {
     }
 
     /**
-     * Сохнет без воды. Первые {@code grace} секунд на суше ничего не происходит, потом тело слабеет,
-     * а после двойного срока начинает получать урон. Вода или дождь сбрасывают отсчёт сразу.
+     * Dry out on land after {@code grace} seconds. Apply weakness first and start dealing damage after
+     * twice that time. Water or rain resets the timer.
      */
     public record DryOut(Stage minStage, int grace, float amount, Optional<String> descriptionKey) implements Trait {
         /**
-         * Сколько секунд подряд носитель провёл без воды и когда отсчёт шёл последний раз. Не сохраняется:
-         * релог — это глоток воды. Разрыв в отсчёте (черта не работала: штамм сменили, стадия упала)
-         * тоже начинает счёт заново — иначе старая засуха догоняла бы новое тело.
+         * Track consecutive dry seconds and the last check. Reconnecting resets the timer. So does a break
+         * in the trait caused by a strain or stage change.
          */
         private static final Map<UUID, long[]> DRY = new ConcurrentHashMap<>();
 
@@ -816,8 +814,8 @@ public final class Traits {
     }
 
     /**
-     * Удар носителя вешает на цель эффект: яд пчелы, иссушение, замедление. С {@code self_damage}
-     * каждый такой удар стоит носителю крови — но никогда не последнего сердца.
+     * Melee applies an effect such as venom, wither, or slowness. With {@code self_damage}, each hit also
+     * costs health without killing the player.
      */
     public record OnHitEffect(Stage minStage, Holder<MobEffect> effect, int duration, int amplifier,
                               float selfDamage, Optional<String> descriptionKey) implements Trait {
@@ -845,13 +843,13 @@ public final class Traits {
         public void onMeleeHit(ServerPlayer player, LivingEntity target, Stage stage) {
             target.addEffect(new MobEffectInstance(effect, duration, amplifier), player);
             if (selfDamage > 0.0F && !player.getAbilities().instabuild) {
-                // Не через hurt: он дал бы носителю полсекунды неуязвимости, а это уже подарок.
+                // Avoid hurt because it would also grant half a second of invulnerability.
                 player.setHealth(Math.max(1.0F, player.getHealth() - selfDamage));
             }
         }
     }
 
-    /** Шипы: кто бьёт носителя вплотную, получает сдачи. */
+    /** Thorns deal damage back to melee attackers. */
     public record Thorns(Stage minStage, float damage, Optional<String> descriptionKey) implements Trait {
         static final MapCodec<Thorns> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
                 stage(Thorns::minStage),
@@ -875,7 +873,7 @@ public final class Traits {
         }
     }
 
-    /** Страх перед видами из списка: рядом с ними носитель слабеет и замедляется. */
+    /** Nearby species on the list cause weakness and slowness. */
     public record Fear(Stage minStage, List<EntityType<?>> entities, double radius,
                        Optional<String> descriptionKey) implements Trait {
         static final MapCodec<Fear> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
@@ -913,7 +911,7 @@ public final class Traits {
         }
     }
 
-    /** Эффект, который держится только в темноте: невидимость фантома, сила ночного хищника. */
+    /** Apply an effect only in darkness, such as phantom invisibility or a nocturnal predator's strength. */
     public record DarkEffect(Stage minStage, Holder<MobEffect> effect, int amplifier, int maxLight,
                              Optional<String> descriptionKey) implements Trait {
         static final MapCodec<DarkEffect> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
@@ -945,8 +943,8 @@ public final class Traits {
     }
 
     /**
-     * Посевы и саженцы вокруг носителя растут быстрее. Трава и цветы не трогаются: аура не должна
-     * засыпать двор травой, как костная мука.
+     * Accelerate nearby crop and sapling growth. Leave grass and flowers alone so the effect does not
+     * behave like bone meal on the ground.
      */
     public record GrowthAura(Stage minStage, int radius, int tries, Optional<String> descriptionKey) implements Trait {
         static final MapCodec<GrowthAura> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
@@ -988,7 +986,7 @@ public final class Traits {
         }
     }
 
-    /** Тоска по дому: вне родного измерения тело слабеет. */
+    /** Weaken the player outside the strain's home dimension. */
     public record Homesick(Stage minStage, ResourceKey<Level> dimension, List<Holder<MobEffect>> effects,
                            Optional<String> descriptionKey) implements Trait {
         static final MapCodec<Homesick> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
@@ -1025,7 +1023,7 @@ public final class Traits {
         }
     }
 
-    /** Жадность: предметы из тега нельзя выбросить. В сундук положить можно, на смерть не действует. */
+    /** Block dropping tagged items. They can still go into chests and drop on death. */
     public record Hoard(Stage minStage, TagKey<Item> items, Optional<String> descriptionKey) implements Trait {
         static final MapCodec<Hoard> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
                 stage(Hoard::minStage),
@@ -1055,9 +1053,9 @@ public final class Traits {
     }
 
     /**
-     * Полёт: двойной прыжок поднимает в воздух, как в творческом режиме. Держится на сытости — в воздухе
-     * голод тает быстрее, чем на бегу, а ниже {@code min_food} крылья не держат. Без {@code rain}
-     * мокрые крылья под дождём и в воде не несут. Разрешение выдаёт и забирает {@link net.krona.mutagen.mutation.Flight}.
+     * Double-jump to fly as in creative mode. Flight consumes hunger faster than sprinting and requires at
+     * least {@code min_food}. Without {@code rain}, water and rain prevent flight. {@link
+     * net.krona.mutagen.mutation.Flight} grants and revokes permission.
      */
     public record Flight(Stage minStage, float speed, float exhaustion, int minFood, boolean rain,
                          Optional<String> descriptionKey) implements Trait {
@@ -1082,7 +1080,7 @@ public final class Traits {
         }
     }
 
-    /** Эффект, который держится, пока носитель в воде: скорость дельфина, зрение в глубине. */
+    /** Apply an effect while the player is in water, such as dolphin speed or underwater vision. */
     public record WaterEffect(Stage minStage, Holder<MobEffect> effect, int amplifier,
                               Optional<String> descriptionKey) implements Trait {
         static final MapCodec<WaterEffect> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
@@ -1106,7 +1104,7 @@ public final class Traits {
         @Override
         public void tick(ServerPlayer player, Stage stage) {
             if (player.isInWater()) {
-                // С запасом больше секунды: иначе эффект мигал бы между проверками.
+                // Keep more than one second of effect duration to prevent flickering between checks.
                 player.addEffect(new MobEffectInstance(effect, 45, amplifier, true, false, true));
             }
         }

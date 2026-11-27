@@ -26,13 +26,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Постепенный визуал трансформации.
+ * Render the visible stages of transformation.
  * <p>
- * Стадия I ничего не показывает: изменения только на слух и на ощупь. Со стадии II по коже от места укола
- * расползаются пятна плоти существа ({@link InfectionTextures}), со стадии III начинают светиться глаза
- * и прорастают части самого существа ({@link HybridRenderer}). Пропорции и осанку меняет
- * {@link net.krona.mutagen.client.body.BodyMorph}. Скин игрока не пропадает до полной формы:
- * между пятнами остаётся его собственная кожа.
+ * Stage I changes sounds and sensations only. From stage II, patches of creature skin spread from the
+ * injection site ({@link InfectionTextures}). Stage III brings glowing eyes and emerging creature parts
+ * ({@link HybridRenderer}). {@link net.krona.mutagen.client.body.BodyMorph} changes proportions and
+ * posture. The player skin remains visible between patches until full form.
  */
 @Environment(EnvType.CLIENT)
 public class MutationLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> {
@@ -74,7 +73,7 @@ public class MutationLayer extends RenderLayer<AbstractClientPlayer, PlayerModel
         if (IrisCompat.isShadowPass()) return;
         ResourceLocation skin = InfectionTextures.skin(player, strain, gene);
         if (skin != null) {
-            // Та же геометрия, что и у скина: заражённые пиксели ложатся ровно на кожу и на одежду.
+            // Match the player skin's geometry so infected pixels line up with skin and clothing.
             model.renderToBuffer(pose, buffer.getBuffer(RenderType.entityCutoutNoCullZOffset(skin)), packedLight,
                     OverlayTexture.NO_OVERLAY, -1);
         }
@@ -89,8 +88,8 @@ public class MutationLayer extends RenderLayer<AbstractClientPlayer, PlayerModel
     }
 
     /**
-     * Светящиеся глаза есть не у каждого штамма: у штамма из чужого датапака текстуры глаз может не быть,
-     * и вместо неё нельзя рисовать чёрно-фиолетовую заглушку.
+     * Some strains, including custom ones, lack an eye texture. Skip the layer to avoid drawing a
+     * missing-texture placeholder.
      */
     private static boolean hasTexture(ResourceLocation texture) {
         return EYES.computeIfAbsent(texture,

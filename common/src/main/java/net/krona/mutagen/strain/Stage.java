@@ -8,7 +8,7 @@ import net.minecraft.network.chat.Component;
 import java.util.Locale;
 
 /**
- * Пять стадий трансформации. Порог — минимальный прогресс, с которого стадия считается достигнутой.
+ * Five transformation stages. Each threshold is the minimum progress required to reach that stage.
  */
 public enum Stage {
     NONE("none", 0, "", ChatFormatting.GRAY),
@@ -19,8 +19,8 @@ public enum Stage {
     FULL("full", 100, "V", ChatFormatting.RED);
 
     /**
-     * В датапаке стадия пишется словом ({@code "mutation"}), римской цифрой ({@code "III"})
-     * или номером ({@code 3}) — как автору штамма удобнее.
+     * Datapacks accept a stage name ({@code "mutation"}), Roman numeral ({@code "III"}), or number ({@code
+     * 3}).
      */
     public static final Codec<Stage> CODEC = Codec.withAlternative(
             Codec.STRING.comapFlatMap(Stage::parse, Stage::key),

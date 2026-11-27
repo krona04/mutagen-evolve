@@ -2,6 +2,7 @@ package net.krona.mutagen.data;
 
 import io.netty.buffer.ByteBuf;
 import net.krona.mutagen.strain.Stage;
+import net.krona.mutagen.strain.Strains;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -14,9 +15,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Состояние мутации игрока. Живёт на сервере, на клиент приезжает копией для отрисовки.
+ * Server-side player mutation state, mirrored to clients for rendering.
  * <p>
- * Формат данных версионируется с первой версии мода: конвертер миров в 2.0 будет опираться на это поле.
+ * Version the data from the first release so the 2.0 world converter can use this field.
  */
 public final class MutagenData {
     public static final int FORMAT_VERSION = 1;
@@ -29,6 +30,11 @@ public final class MutagenData {
         return genes;
     }
 
+    /** Keep strains from disabled datapacks in the save without counting them toward the slot limit. */
+    public long activeGeneCount() {
+        return genes.stream().filter(gene -> Strains.get(gene.strainId()) != null).count();
+    }
+
     @Nullable
     public Gene gene(ResourceLocation strainId) {
         for (Gene gene : genes) {
@@ -39,12 +45,12 @@ public final class MutagenData {
         return null;
     }
 
-    /** Основной штамм — тот, у которого прогресс выше всех. */
+    /** The primary strain is the registered strain with the highest progress. */
     @Nullable
     public Gene primary() {
         Gene best = null;
         for (Gene gene : genes) {
-            if (best == null || gene.progress() > best.progress()) {
+            if (Strains.get(gene.strainId()) != null && (best == null || gene.progress() > best.progress())) {
                 best = gene;
             }
         }
@@ -82,8 +88,7 @@ public final class MutagenData {
     }
 
     /**
-     * Человечность: 100 минус прогресс самого сильного штамма.
-     * В 0.4 сюда придёт взвешенная сумма всех генов.
+     * Humanity is 100 minus the highest strain progress. Version 0.4 will use a weighted sum of all genes.
      */
     public float humanity() {
         Gene primary = primary();
@@ -91,9 +96,8 @@ public final class MutagenData {
     }
 
     /**
-     * Флаг «состояние изменилось по сути»: появился или ушёл ген, сменилась фиксация.
-     * Такие изменения уходят на клиент сразу. Плавное движение прогресса флаг не ставит —
-     * его сеть отправляет порциями, см. {@link net.krona.mutagen.network.MutagenNetwork}.
+     * Mark changes such as adding, removing, or locking a gene for immediate sync. Gradual progress is sent
+     * in increments by {@link net.krona.mutagen.network.MutagenNetwork}.
      */
     public boolean isDirty() {
         return dirty;
@@ -124,14 +128,14 @@ public final class MutagenData {
         ListTag list = tag.getList("Genes", Tag.TAG_COMPOUND);
         for (int i = 0; i < list.size(); i++) {
             Gene gene = Gene.load(list.getCompound(i), version);
-            if (gene != null) {
+            if (gene != null && (gene.progress() > 0.0F || gene.pending() > 0.0F)) {
                 genes.add(gene);
             }
         }
         markDirty();
     }
 
-    /** Копия генов для отправки на клиент и сравнения с тем, что уже отправлено. */
+    /** Copy the genes for client sync and comparison with the previous snapshot. */
     public List<Gene> snapshot() {
         List<Gene> copy = new ArrayList<>(genes.size());
         for (Gene gene : genes) {
@@ -140,7 +144,7 @@ public final class MutagenData {
         return copy;
     }
 
-    /** Клиент: принять состояние, пришедшее с сервера. */
+    /** Apply mutation state received from the server. */
     public void applySnapshot(List<Gene> snapshot) {
         genes.clear();
         for (Gene gene : snapshot) {
@@ -156,12 +160,12 @@ public final class MutagenData {
         markDirty();
     }
 
-    /** Прогресс одного штамма в теле игрока. */
+    /** Progress of a single strain in the player. */
     public static final class Gene {
-        /** Остатки меньше этого — погрешность вычислений, а не прогресс. */
+        /** Treat values below this threshold as rounding error. */
         private static final float EDGE = 0.001F;
 
-        /** Компактная запись для сети: без строковых ключей NBT. */
+        /** Compact network representation without NBT string keys. */
         public static final StreamCodec<ByteBuf, Gene> STREAM_CODEC = StreamCodec.composite(
                 ResourceLocation.STREAM_CODEC, Gene::strainId,
                 ByteBufCodecs.FLOAT, Gene::progress,
@@ -190,19 +194,19 @@ public final class MutagenData {
             return strainId;
         }
 
-        /** Прогресс штамма, 0–100. */
+        /** Strain progress from 0 to 100. */
         public float progress() {
             return progress;
         }
 
         public void setProgress(float value) {
-            // Усвоение идёт шагами по 1/30%, и дробная погрешность оставляла прогресс на 99.99999:
-            // полная форма так и не наступала. Подошедший к краю прогресс встаёт ровно на край.
+            // Absorption advances in steps of 1/30%, which can leave progress at 99.99999 and prevent full
+            // form. Snap progress near the upper bound to 100.
             float clamped = Math.max(0.0F, Math.min(100.0F, value));
             this.progress = clamped > 100.0F - EDGE ? 100.0F : clamped;
         }
 
-        /** Запас усвоения: введено, но телом ещё не переработано. */
+        /** Injected serum that the body has yet to absorb. */
         public float pending() {
             return pending;
         }
@@ -216,7 +220,7 @@ public final class MutagenData {
             setPending(pending + value);
         }
 
-        /** Стабилизатор: прогресс больше не откатывается сам. */
+        /** A stabilizer prevents progress from decaying on its own. */
         public boolean locked() {
             return locked;
         }

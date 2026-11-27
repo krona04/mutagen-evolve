@@ -37,19 +37,18 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Поверхность существа на превращающемся теле.
+ * Render the creature's skin over the transforming body.
  * <p>
- * Форму тела меняет {@link BodyMorph}: кость игрока сама становится частью существа. Здесь на ту же
- * форму ложится шкура существа — его настоящая часть модели, вписанная ровно в коробку, которую сейчас
- * занимает кость, и лишь на волос снаружи. Шкура проступает островками по мере заражения кости
- * ({@link InfectionTextures#part}), а к концу превращения закрывает кость целиком. Части, которых
- * у человека нет, вырастают из тела на своём месте.
+ * {@link BodyMorph} reshapes each player bone into a creature part. This renderer fits the matching
+ * creature model part over the bone's current box with a slight offset. The skin appears in patches as
+ * infection spreads ({@link InfectionTextures#part}) and eventually covers the whole bone. Parts with no
+ * human equivalent grow from the body in their proper positions.
  */
 @Environment(EnvType.CLIENT)
 public final class HybridRenderer {
-    /** Шкура чуть снаружи кости, чтобы не мерцать в одной плоскости со скином. */
+    /** Offset the creature skin slightly to avoid z-fighting with the player skin. */
 
-    /** Пока заражение кости совсем свежее, шкуры на ней ещё нет. */
+    /** Skip the creature skin while infection in this bone is still minimal. */
     private static final float MIN_PHASE = 0.02F;
 
     private HybridRenderer() {
@@ -60,7 +59,7 @@ public final class HybridRenderer {
         return MutagenConfig.get().hybridRender && stage.atLeast(Stage.MANIFESTATION) && !stage.atLeast(Stage.FULL);
     }
 
-    /** Третье лицо: шкура на всех перестроенных костях и выросшие части. */
+    /** Render skin on transformed bones and any grown parts in third person. */
     public static void renderBody(PlayerModel<?> model, AbstractClientPlayer player, MutagenData.Gene gene,
                                   Strain strain, PoseStack pose, MultiBufferSource buffer, int light) {
         BodyMorph.Frame frame = BodyMorph.frame(player);
@@ -83,7 +82,7 @@ public final class HybridRenderer {
             MorphPlan.Target grown = grownParts.get(i);
             Matrix4f own = frame.grown(i);
             Strain.Bone follow = grown.part().bone();
-            // Растёт вместе с тем, как кость покрывается шкурой существа, а не только с её заражением.
+            // Grow with the amount of creature skin covering the bone as well as its infection progress.
             float t = frame.shape(follow) != null ? frame.phase(follow)
                     : Infection.bonePhase(strain, follow, gene.progress());
             if (MutagenConfig.get().bodyMorph) {
@@ -108,10 +107,9 @@ public final class HybridRenderer {
     }
 
     /**
-     * Где сейчас выросшая часть. Она держится за кость, из которой растёт: пока корпус человека ещё
-     * только ложится горизонтально, брюшко паука и средние лапы уже сидят на нём, а не висят там,
-     * где будут у готового паука. Сдвиг и поворот части относительно родительской части существа
-     * переносятся на кость в её нынешней позе. Кость без пары в существе — часть на своём месте.
+     * Anchor the growing part to its source bone. A spider's abdomen and middle legs follow the torso as it
+     * tilts, starting from the relative pose of the corresponding creature parts. If the bone has no
+     * creature counterpart, use the part's own position.
      */
     private static Matrix4f attach(PlayerModel<?> model, MorphPlan plan, BodyMorph.Frame frame, Strain.Bone follow,
                                    Matrix4f own, float t, boolean anatomical) {
@@ -140,13 +138,13 @@ public final class HybridRenderer {
                 .rotate(Poses.rotation(bone).mul(new Quaternionf(parent.align()).conjugate()))
                 .scale(Poses.scale(parentGoal));
         Matrix4f relative = parentGoal.invert(new Matrix4f()).mul(own);
-        // Часть выходит из кости: пока она мала, она и сидит ближе к месту, откуда растёт.
+        // Keep the part close to its point of origin while it is small.
         Vector3f offset = relative.getTranslation(new Vector3f());
         relative.setTranslation(offset.mul(0.35F + 0.65F * t));
         return current.mul(relative);
     }
 
-    /** Первое лицо: шкура существа на руке, которая сейчас превращается. */
+    /** Render creature skin over the transforming arm in first person. */
     public static void renderArm(AbstractClientPlayer player, ModelPart arm, boolean right, PoseStack pose,
                                  MultiBufferSource buffer, int light) {
         MutagenData.Gene gene = MutagenPlayer.of(player).primary();
@@ -166,8 +164,8 @@ public final class HybridRenderer {
     }
 
     /**
-     * Часть существа поверх кости. Кость повёрнута вдоль длинной оси части ({@link MorphPlan.Target#align}),
-     * поэтому часть рисуется с обратным доворотом, а коробка кости переводится в её координаты.
+     * Render the creature part over the bone. The bone is aligned to the part's long axis ({@link
+     * MorphPlan.Target#align}), so undo that rotation and transform its box into the part's coordinates.
      */
     private static void drawOn(AbstractClientPlayer player, Strain strain, MorphPlan.Target target, ModelPart bone,
                                BodyMorph.Frame frame, Strain.Bone which, PoseStack pose, MultiBufferSource buffer,
@@ -194,7 +192,7 @@ public final class HybridRenderer {
         render(player, strain, target, t, mob, pose, buffer, light);
     }
 
-    /** Поза части и всех её потомков — на такую же часть другого слоя модели. */
+    /** Copy the part's pose and its descendants' poses to the corresponding part in another model layer. */
     private static void copyPose(ModelPart from, ModelPart to) {
         to.copyFrom(from);
         to.xScale = from.xScale;
@@ -218,13 +216,13 @@ public final class HybridRenderer {
             return;
         }
         mob.visible = true;
-        // Потомки, которых ведёт своя запись плана, рисуются сами, на своём месте.
+        // Descendants with their own plan entries render independently in their own positions.
         for (ModelPart hidden : target.hide()) {
             hidden.visible = false;
         }
         mob.render(pose, buffer.getBuffer(RenderType.entityCutoutNoCull(texture)), light, OverlayTexture.NO_OVERLAY, colour);
 
-        // Дополнительные слои существа — та же часть в той же позе, со своей текстурой.
+        // Render extra creature layers over the same part and pose using their own textures.
         List<Strain.Overlay> overlays = strain.body().overlays();
         for (int i = 0; i < overlays.size() && i < target.overlays().size(); i++) {
             ModelPart layer = target.overlays().get(i).orElse(null);

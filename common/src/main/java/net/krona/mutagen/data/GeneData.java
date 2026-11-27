@@ -8,11 +8,10 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.ResourceLocation;
 
 /**
- * Компонент предмета: какой штамм лежит в пробирке и насколько он чист.
- * Носят образец, геном и сыворотка.
+ * Item component recording the strain and its purity. Used by samples, genomes, and serums.
  * <p>
- * {@code limit} есть только у сыворотки: до какого прогресса она способна довести. Его задаёт
- * изученность вида в момент синтеза — слабая сыворотка из плохо изученного генома упирается в 40%.
+ * Only serum has a {@code limit}, the maximum progress it can reach. Research at the time of synthesis sets
+ * the limit. Serum made with little research caps progress at 40%.
  */
 public record GeneData(ResourceLocation strain, float quality, int limit) {
     public static final int NO_LIMIT = 100;

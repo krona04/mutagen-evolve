@@ -14,18 +14,17 @@ import net.minecraft.world.entity.player.Abilities;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Полёт летающих штаммов. Каждый тик решается, держат ли носителя крылья: есть ли у штамма черта
- * {@link Traits.Flight} на нынешней стадии, хватает ли сытости, не мокрые ли крылья. Если держат —
- * игроку выдаётся тот же полёт, что в творческом режиме (двойной прыжок), со своей скоростью, и в
- * воздухе он платит голодом. Если нет — полёт забирается, и носитель падает.
+ * Evaluate flight each tick from the active {@link Traits.Flight}, hunger, and wetness. Eligible players
+ * get creative-style double-jump flight at a strain-specific speed and spend hunger while airborne.
+ * Otherwise remove the strain's flight.
  * <p>
- * Выданный полёт помечен тегом игрока: так он переживает перезаход и сервер, а чужой полёт — творческий
- * режим, другие моды — штамм не трогает и не отнимает.
+ * Mark strain-granted flight with a persistent player tag so reconnecting preserves ownership. Leave flight
+ * granted by creative mode or other mods alone.
  */
 public final class Flight {
-    /** Метка «этот полёт выдал штамм». Обычный тег сущности, сохраняется вместе с игроком. */
+    /** Persistent entity tag for flight granted by a strain. */
     public static final String TAG = "mutagen_flight";
-    /** Скорость полёта игрока по умолчанию. */
+    /** Default player flight speed. */
     private static final float DEFAULT_SPEED = 0.05F;
 
     private Flight() {
@@ -34,7 +33,7 @@ public final class Flight {
     public static void tick(ServerPlayer player) {
         Abilities abilities = player.getAbilities();
         if (player.isCreative() || player.isSpectator()) {
-            // Полётом распоряжается режим игры. Наша метка больше ничего не значит.
+            // The game mode controls flight now, so clear our ownership tag.
             player.removeTag(TAG);
             return;
         }
@@ -69,7 +68,7 @@ public final class Flight {
         }
     }
 
-    /** Почему крылья сейчас не держат, или null, если держат. */
+    /** Reason flight is unavailable, or null when the wings can support the player. */
     @Nullable
     private static String groundedBy(ServerPlayer player, Traits.Flight wings) {
         if (player.getFoodData().getFoodLevel() < wings.minFood()) {
@@ -81,7 +80,7 @@ public final class Flight {
         return null;
     }
 
-    /** Черта полёта основного штамма на нынешней стадии. */
+    /** Active flight trait for the primary strain. */
     @Nullable
     private static Traits.Flight wings(ServerPlayer player) {
         MutagenData data = MutagenPlayer.of(player);

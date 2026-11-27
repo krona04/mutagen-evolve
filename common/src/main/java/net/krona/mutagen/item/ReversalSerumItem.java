@@ -18,8 +18,8 @@ import net.minecraft.world.level.Level;
 import java.util.List;
 
 /**
- * Антимутаген: откатывает прогресс на 15%. Болезненно — и так и задумано.
- * Молоко трансформацию не снимает, иначе вся система обесценивается.
+ * Reversal serum reduces progress by 15 percentage points and causes pain. Milk does not reverse the
+ * transformation.
  */
 public class ReversalSerumItem extends Item {
     private static final float STEP = 15.0F;

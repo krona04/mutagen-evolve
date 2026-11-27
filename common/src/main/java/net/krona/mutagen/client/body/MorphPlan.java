@@ -35,38 +35,36 @@ import java.util.Set;
 import java.util.WeakHashMap;
 
 /**
- * План превращения для штамма: какая кость игрока в какую часть существа переходит, что у существа
- * вырастает сверх человеческого и какие кости втягиваются.
+ * Strain transformation plan mapping player bones, growing extra creature parts, and retracting unmatched
+ * bones.
  * <p>
- * Модель существа запекается из её собственного ванильного слоя, поэтому годится любой моб. И она
- * живая: каждый кадр её двигает собственная анимация существа ({@link #animate}) с походкой, поворотом
- * головы и возрастом игрока. Кости игрока тянутся к части существа в той позе, в какой она сейчас
- * у существа, — а не в позе покоя из файла модели, где у паука, например, ноги лежат горизонтально.
- * Поэтому к концу превращения мутант уже ходит, как существо, и переход в полную форму незаметен.
+ * Bake the creature's own vanilla model layer. Animate it every frame with the player's gait, head
+ * rotation, and age via {@link #animate}. Target the animated pose so the player's gait matches the
+ * creature before the switch to full form.
  * <p>
- * Если в штамме нет списка частей, кости сопоставляются по именам: {@code head}, {@code body},
- * {@code right_arm} и так далее — так устроены все человекоподобные мобы.
+ * Without an explicit mapping, match humanoid part names such as {@code head}, {@code body}, and {@code
+ * right_arm}.
  */
 @Environment(EnvType.CLIENT)
 public final class MorphPlan {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final Map<String, Optional<ModelPart>> ROOTS = new HashMap<>();
     private static final Map<Strain, MorphPlan> PLANS = new WeakHashMap<>();
-    /** Во сколько раз длинная ось части должна превосходить остальные, чтобы кость разворачивалась вдоль неё. */
+    /** Minimum ratio of a part's longest axis to the others before aligning the bone to it. */
     private static final float LONG_AXIS = 1.4F;
-    /** Ваниль сдвигает любую модель на эту высоту перед отрисовкой: земля модели на y = 24. */
+    /** Vanilla rendering offsets the model so its ground level is at y = 24. */
     private static final float MODEL_ORIGIN = 1.501F;
 
     /**
-     * Кость игрока → часть существа, которой она становится.
+     * Mapping from a player bone to its target creature part.
      *
-     * @param chain   путь от корня модели до части включительно: по нему считается её поза в теле
-     * @param box     габариты части в её собственных координатах, без отдельно ведомых потомков
-     * @param align   прямой поворот, после которого длинная ось части смотрит туда же, куда кость игрока
-     *                (вниз по её длине). Лапа паука вытянута вдоль X, рука — вдоль Y: без этого рука
-     *                на полпути превращалась бы в бесформенный брусок, а не поворачивалась бы лапой вбок
-     * @param aligned та же коробка в координатах кости: {@code align⁻¹(box)}
-     * @param hide    потомки, которых превращение ведёт отдельно: при отрисовке части их прячут
+     * @param chain path from the model root through the part, used to calculate its pose
+     * @param box bounds in the part's local coordinates, excluding descendants handled separately
+     * @param align quarter-turn that aligns the part's long axis with the length of the player bone. A
+     * spider leg lies along X and the arm lies along Y, so rotate instead of collapsing the arm to a box
+     * during the transition
+     * @param aligned the same bounds in bone coordinates, given by {@code align⁻¹(box)}
+     * @param hide descendants handled by separate morph entries and hidden when rendering this part
      */
     public record Target(int index, Strain.Part part, ModelPart model, List<ModelPart> chain, Box box,
                          Quaternionf align, Box aligned, List<ModelPart> hide, List<Optional<ModelPart>> overlays) {
@@ -82,7 +80,7 @@ public final class MorphPlan {
     @Nullable
     private EntityModel<LivingEntity> animator;
     private boolean animatorTried;
-    /** Поправка рендера существа относительно рендера игрока, в блоках. */
+    /** Difference between creature and player renderer transforms, in blocks. */
     private Matrix4f correction = new Matrix4f();
 
     private MorphPlan(Strain strain, @Nullable ModelPart root) {
@@ -107,14 +105,14 @@ public final class MorphPlan {
                 if (root.hasChild(bone.key())) {
                     auto.add(new Strain.Part(bone.key(), bone));
                 } else if ((bone == Strain.Bone.RIGHT_ARM || bone == Strain.Bone.LEFT_ARM) && root.hasChild("arms")) {
-                    // Сложенные руки жителей, ведьмы и разбойников — одна часть на обе руки.
+                    // Villagers, witches, and illagers share one model part for both crossed arms.
                     auto.add(new Strain.Part("arms", bone));
                 }
             }
             return auto;
         });
 
-        // Сначала пути: коробки считаются без потомков, которых ведёт своя запись плана.
+        // Resolve the paths first so bounds exclude descendants with their own plan entries.
         List<List<ModelPart>> chains = new ArrayList<>();
         Set<ModelPart> planned = Collections.newSetFromMap(new IdentityHashMap<>());
         for (Strain.Part part : parts) {
@@ -140,7 +138,7 @@ public final class MorphPlan {
             Box box = Box.of(model, hide).scaled(part.scale().x(), part.scale().y(), part.scale().z());
             Quaternionf align = alignment(box, part.bone());
             Box aligned = box.rotated(new Quaternionf(align).conjugate());
-            // Та же часть в дополнительных слоях существа (одежда утопленника, глаза паука).
+            // The same part in extra creature layers such as drowned clothing or spider eyes.
             List<Optional<ModelPart>> overlays = new ArrayList<>();
             for (Strain.Overlay overlay : strain.body().overlays()) {
                 ModelPart layer = root(overlay.modelLayer().orElse(strain.modelLayer()), strain);
@@ -172,8 +170,8 @@ public final class MorphPlan {
     }
 
     /**
-     * Ставит модель существа в позу этого кадра: та же походка, поворот головы и возраст, что у игрока.
-     * Модели, которую не удалось оживить, остаётся поза покоя — превращение всё равно работает.
+     * Apply the player's gait, head rotation, and age to the creature model for this frame. If animation is
+     * unavailable, use its rest pose.
      */
     @SuppressWarnings("unchecked")
     public void animate(Player player, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw,
@@ -234,8 +232,8 @@ public final class MorphPlan {
     }
 
     /**
-     * Своя копия модели существа поверх запечённого здесь корня: тот же класс, что у его рендера,
-     * но части — наши, и анимация двигает именно их. Заодно снимается поправка рендера.
+     * Instantiate the renderer's model class with our baked model root so its animation updates our parts.
+     * Also calculate the renderer's transform.
      */
     @SuppressWarnings("unchecked")
     private void prepare(Player player, LivingEntity dummy) {
@@ -255,10 +253,8 @@ public final class MorphPlan {
     }
 
     /**
-     * Модель существа и модель игрока рисуются каждая со своим масштабом и сдвигом ({@code scale()}
-     * их рендеров): игрок чуть меньше своих координат, фантом — ниже своих. Поправка переводит позу
-     * части существа в координаты модели игрока так, чтобы на экране она оказалась там же, где её
-     * нарисует настоящий рендер существа.
+     * Creature and player renderers apply their own scales and offsets through {@code scale()}. Convert the
+     * creature part pose into player model coordinates so it lines up with the native creature rendering.
      */
     private static Matrix4f correction(Player player, LivingEntity dummy, LivingEntityRenderer<?, ?> mobRenderer) {
         try {
@@ -281,7 +277,7 @@ public final class MorphPlan {
         }
     }
 
-    /** Поза части в теле, в блоках, в координатах модели игрока. Считать после {@link #animate}. */
+    /** Part pose in player model coordinates and in blocks. Calculate after {@link #animate}. */
     public Matrix4f pose(Target target) {
         Matrix4f matrix = new Matrix4f(correction);
         if (root != null) {
@@ -294,10 +290,9 @@ public final class MorphPlan {
     }
 
     /**
-     * Длинная ось части → куда её развернуть, чтобы она легла вдоль кости игрока. Конечность растёт
-     * от точки поворота туда, где часть длиннее. Корпус, вытянутый вдоль Z, ложится иначе: верх
-     * туловища уходит вперёд, к голове существа (модели смотрят в −Z), — по коробке этого не понять,
-     * усики пчелы тянут её вперёд сильнее, чем жало назад.
+     * Align the part's long axis with the player bone. Limbs extend from the pivot toward the longer side.
+     * A torso along Z instead tips its upper end forward toward the head, along −Z. Its bounds alone are
+     * insufficient because features such as bee antennae skew them.
      */
     private static Quaternionf alignment(Box box, Strain.Bone bone) {
         float sx = box.maxX() - box.minX();
@@ -305,7 +300,7 @@ public final class MorphPlan {
         float sz = box.maxZ() - box.minZ();
         float half = (float) (Math.PI / 2.0D);
         if (sx >= LONG_AXIS * Math.max(sy, sz)) {
-            // Кость растёт вниз по +Y; поворот вокруг Z на −90° уводит +Y в +X.
+            // The bone extends downward along +Y. A −90° rotation about Z maps +Y to +X.
             boolean positive = Math.abs(box.maxX()) >= Math.abs(box.minX());
             return new Quaternionf().rotationZ(positive ? -half : half);
         }
@@ -314,13 +309,13 @@ public final class MorphPlan {
             return new Quaternionf().rotationX(positive ? half : -half);
         }
         if (sy >= LONG_AXIS * Math.max(sx, sz) && Math.abs(box.minY()) > Math.abs(box.maxY())) {
-            // Вытянута вверх от точки поворота — кость переворачивается.
+            // Flip the bone if the part extends upward from the pivot.
             return new Quaternionf().rotationX((float) Math.PI);
         }
         return new Quaternionf();
     }
 
-    /** Путь вида {@code "head"} или {@code "body/tail"}: части от первой после корня до искомой. */
+    /** Part path from the first child of the root, such as {@code "head"} or {@code "body/tail"}. */
     @Nullable
     private static List<ModelPart> chain(ModelPart root, String path) {
         List<ModelPart> chain = new ArrayList<>();
@@ -346,8 +341,8 @@ public final class MorphPlan {
     }
 
     /**
-     * Корень модели существа. Запекается один раз: геометрия слоёв задаётся кодом и не меняется
-     * при перезагрузке ресурсов. Если слоя нет, штамм меняет только кожу, но не форму.
+     * Bake the creature model root once because resource reloads do not change the layer geometry. If the
+     * layer is unavailable, the strain changes only the skin.
      */
     @Nullable
     private static ModelPart root(Strain strain) {

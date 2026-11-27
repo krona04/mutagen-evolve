@@ -15,12 +15,10 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
 /**
- * Сыворотка: инъекция кладёт в тело запас усвоения. Прогресс не прыгает — тело перерабатывает
- * дозу медленно, и это главное отличие мода от мгновенного морфа.
+ * Inject serum into the absorption reserve. The body processes the dose gradually.
  * <p>
- * Укол срабатывает по одному нажатию, без удержания: так между нажатием и результатом нет
- * состояния «использую предмет», в котором раньше всё и застревало.
- * Ампула тратится только тогда, когда доза действительно вошла.
+ * Inject on a single press to avoid getting stuck in the item-use state. Consume the vial only after the
+ * dose succeeds.
  */
 public class SerumItem extends GeneItem {
     private static final int COOLDOWN_TICKS = 20;
@@ -49,7 +47,7 @@ public class SerumItem extends GeneItem {
             return InteractionResultHolder.pass(stack);
         }
 
-        // Доза проверяется до укола: отказ не должен стоить игроку ампулы.
+        // Validate the dose before consuming the vial.
         if (!Mutation.dose(serverPlayer, gene.strain(), gene.quality(), gene.limit())) {
             return InteractionResultHolder.fail(stack);
         }

@@ -9,24 +9,23 @@ import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
 /**
- * Позы частей модели как матрицы и кватернионы.
+ * Represent model part poses as matrices and quaternions.
  * <p>
- * Часть модели поворачивается углами Эйлера в порядке ZYX ({@link ModelPart#translateAndRotate}).
- * Превращению нужно складывать повороты и плавно переходить от одного к другому, а это делается
- * кватернионами; обратно в углы кватернион раскладывает {@link #euler}. Свой расклад, а не JOML:
- * {@code getEulerAnglesZYX} в версии, что идёт с игрой, возвращает неверный угол вокруг X.
+ * Vanilla applies Euler rotations in ZYX order ({@link ModelPart#translateAndRotate}). Use quaternions to
+ * compose and interpolate rotations, then convert with {@link #euler}. Minecraft's version of JOML returns
+ * an incorrect X angle from {@code getEulerAnglesZYX}.
  */
 @Environment(EnvType.CLIENT)
 public final class Poses {
     private Poses() {
     }
 
-    /** Поворот части так, как его применяет сама игра. */
+    /** Rotate a part in the same order as vanilla. */
     public static Quaternionf rotation(ModelPart part) {
         return new Quaternionf().rotationZYX(part.zRot, part.yRot, part.xRot);
     }
 
-    /** Разложение поворота на углы для {@link ModelPart}: {@code [x, y, z]}. */
+    /** Decompose a rotation into {@code [x, y, z]} angles for {@link ModelPart}. */
     public static Vector3f euler(Quaternionf rotation) {
         Matrix3f m = new Matrix3f().set(rotation);
         float y = (float) Math.asin(Math.max(-1.0F, Math.min(1.0F, -m.m02)));
@@ -42,14 +41,14 @@ public final class Poses {
         part.zRot = angles.z;
     }
 
-    /** Добавляет к матрице (в блоках) собственное смещение, поворот и масштаб части. */
+    /** Append the part's translation in blocks, rotation, and scale to the matrix. */
     public static Matrix4f apply(Matrix4f matrix, ModelPart part) {
         return matrix.translate(part.x / 16.0F, part.y / 16.0F, part.z / 16.0F)
                 .rotate(rotation(part))
                 .scale(part.xScale, part.yScale, part.zScale);
     }
 
-    /** Точка поворота в пикселях модели. */
+    /** Pivot in model pixels. */
     public static Vector3f pivot(Matrix4f matrix) {
         return matrix.getTranslation(new Vector3f()).mul(16.0F);
     }
@@ -58,12 +57,12 @@ public final class Poses {
         return matrix.getUnnormalizedRotation(new Quaternionf()).normalize();
     }
 
-    /** Масштаб матрицы. Позы существ масштабируются равномерно, поэтому хватает одной оси. */
+    /** Uniform scale from the pose matrix. One axis suffices. */
     public static float scale(Matrix4f matrix) {
         return matrix.getScale(new Vector3f()).x;
     }
 
-    /** Ставит часть в позу, заданную матрицей в блоках, с добавочным масштабом. */
+    /** Set the part pose from a matrix in blocks and apply an extra scale. */
     public static void place(ModelPart part, Matrix4f matrix, float extraScale) {
         Vector3f pivot = pivot(matrix);
         part.x = pivot.x;

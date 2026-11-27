@@ -9,8 +9,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 /**
- * Конфиг прототипа: то немногое, что уже имеет смысл крутить.
- * Полный набор настроек из дизайн-документа приходит вместе с механиками, которые он описывает.
+ * Prototype configuration. The remaining settings from the design document will arrive with the features
+ * they control.
  */
 public final class MutagenConfig {
     public static final String SCOPE_WORLD = "world";
@@ -19,47 +19,48 @@ public final class MutagenConfig {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static MutagenConfig instance;
 
-    /** Множитель скорости усвоения и отката. */
+    /** Multiplier for absorption and decay rates. */
     public float transformationSpeed = 1.0F;
-    /** Сколько прогресса даёт одна доза сыворотки со стопроцентной чистотой. */
+    /** Progress added by a single dose of 100% pure serum. */
     public float doseStrength = 20.0F;
-    /** Ограничения человечности: отказ носить броню и прочая цена. */
+    /** Humanity penalties, including restrictions on wearing armor. */
     public boolean humanityPenalties = true;
-    /** Горение на солнце у нежити. */
+    /** Whether undead strains burn in sunlight. */
     public boolean sunlightBurn = true;
-    /** Индикатор мутации в интерфейсе. */
+    /** Mutation indicator in the HUD. */
     public boolean hud = true;
     /**
-     * Угол экрана для индикатора: {@code top_left} (по умолчанию), {@code top_right}, {@code bottom_right},
-     * {@code bottom_left}. Внизу слева его закрывает чат, поэтому там он больше не стоит по умолчанию.
+     * HUD indicator corner. Options are {@code top_left} (default), {@code top_right}, {@code
+     * bottom_right}, and {@code bottom_left}. Chat overlaps the bottom-left corner, so it is no longer the
+     * default.
      */
     public String hudCorner = "top_left";
-    /** Полная подмена модели на пятой стадии. Выключите, если конфликтует с модом на скины. */
+    /** Replace the player model in full form. Disable if a skin mod conflicts with it. */
     public boolean fullFormRender = true;
-    /** Сколько генов может держать тело. Химеры приходят в 0.5. */
+    /** Number of genes the body can carry. Chimeras are planned for 0.5. */
     public int maxGenes = 1;
-    /** Чья изученность: {@code "world"} — общая на мир, {@code "player"} — у каждого своя. */
+    /** Research scope. With {@code "world"}, research is shared across the world. With {@code "player"}, each player has their own research. */
     public String knowledgeScope = SCOPE_WORLD;
-    /** Множитель прироста изученности за прогон секвенатора. */
+    /** Multiplier for research gained per sequencer run. */
     public float researchSpeed = 1.0F;
-    /** С какой чистоты генома синтезатор выдаёт две ампулы вместо одной. 101 — никогда. */
+    /** Minimum genome purity for the synthesizer to produce two vials instead of one. A value of 101 disables the extra vial. */
     public float doubleSerumPurity = 85.0F;
-    /** Гибридные стадии III–IV: части существа на теле игрока. Выключите, если конфликтует с модом на модели. */
+    /** Render creature parts on the player during hybrid stages III–IV. Disable if a model mod conflicts with them. */
     public boolean hybridRender = true;
-    /** Пропорции и осанка тела меняются вместе с заражением. */
+    /** Change body proportions and posture as the infection progresses. */
     public boolean bodyMorph = true;
-    /** Судороги на переходе стадий и непроизвольные подёргивания со стадии III. */
+    /** Animate convulsions on stage changes and involuntary twitches from stage III. */
     public boolean bodyMotion = true;
-    /** Если установлен Pehkui, тело меняется через него: хитбокс, глаза, дальность рук и инерция. */
+    /** Use Pehkui when installed to adjust the hitbox, eye height, reach, and inertia. */
     public boolean pehkuiIntegration = true;
     /**
-     * Зрение существа: со стадии IV мир видится его глазами — зелёным, как у крипера, в восемь глаз, как
-     * у паука, в тепле, как у ифрита. Выключено по умолчанию; переключается клавишей (N) прямо в игре.
+     * Creature vision from stage IV lets players see through creeper-green tint, a spider's eight eyes, or
+     * a blaze's heat vision. Disabled by default. Press N in-game to toggle it.
      */
     public boolean mobVision = false;
-    /** Раз за запуск смотрит на Modrinth, не вышла ли новая версия, и пишет об этом в чат. */
+    /** Check CurseForge once per launch and announce available updates in chat. */
     public boolean checkForUpdates = true;
-    /** При входе в мир или на сервер: в первый раз приветствие, потом строка о поддержке мода на Ko-fi. */
+    /** On entering a world or server, show a welcome message the first time and a line about supporting the mod on Ko-fi on later visits. */
     public boolean showSupportMessage = true;
 
     public static MutagenConfig get() {
@@ -91,7 +92,7 @@ public final class MutagenConfig {
             Files.createDirectories(path.getParent());
             Files.writeString(path, GSON.toJson(get()));
         } catch (IOException ignored) {
-            // конфиг не критичен: работаем на значениях по умолчанию
+            // Use defaults if the config cannot be loaded.
         }
     }
 

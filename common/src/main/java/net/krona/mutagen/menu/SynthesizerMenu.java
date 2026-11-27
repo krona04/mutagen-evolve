@@ -51,7 +51,7 @@ public class SynthesizerMenu extends MachineMenu {
         addPlayerInventory(inventory);
     }
 
-    /** Содержимое слота машины: экран по нему объясняет, почему синтез стоит. */
+    /** The screen reads the machine slots to explain why synthesis is blocked. */
     public ItemStack machineItem(int slot) {
         return container.getItem(slot);
     }

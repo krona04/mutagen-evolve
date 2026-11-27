@@ -7,8 +7,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Копия изученности на клиенте: то, что знает сам игрок. Заполняется только пакетами с сервера,
- * поэтому класс живёт в общем коде — подсказкам предметов и экранам не нужно лезть в клиентские классы.
+ * The player's research snapshot received from the server. Keep it in shared code so tooltips and screens
+ * can read it without depending on client classes.
  */
 public final class ClientKnowledge {
     private static volatile Map<ResourceLocation, Float> known = Map.of();
@@ -22,7 +22,7 @@ public final class ClientKnowledge {
         known = Collections.unmodifiableMap(next);
     }
 
-    /** Изученность вида или -1, если вид ещё не встречен. */
+    /** Species research, or -1 if the species is undiscovered. */
     public static float research(ResourceLocation strain) {
         Float value = known.get(strain);
         return value == null ? -1.0F : value;

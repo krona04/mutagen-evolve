@@ -28,17 +28,16 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Шприц: правый клик по мобу забирает образец ткани.
- * Моб это замечает и злится, а повторно отдавать материал сразу не будет.
+ * Right-click a mob to collect a tissue sample. Sampling angers the mob and cannot be repeated immediately.
  * <p>
- * Материал шприца влияет на чистоту: железный одноразовый, золотой и незеритовый служат долго
- * и берут материал бережнее — +10 и +25 к качеству.
+ * Iron syringes are single-use. Gold and netherite syringes last longer and add 10 and 25 purity points,
+ * respectively.
  */
 public class SyringeItem extends Item {
-    /** Метка «из спавнера»: ставится при появлении моба, см. {@code MobMixin}. */
+    /** Tag mobs from spawners when they spawn. See {@code MobMixin}. */
     public static final String SPAWNER_TAG = Mutagen.MOD_ID + ".spawner";
 
-    /** Метка «недавно взят образец»: десять минут игрового времени. */
+    /** Recently sampled marker with a ten-minute in-game cooldown. */
     private static final long COOLDOWN_TICKS = 12000L;
     private static final Map<UUID, Long> RECENT_SAMPLES = new HashMap<>();
 
@@ -110,7 +109,7 @@ public class SyringeItem extends Item {
         return InteractionResult.CONSUME;
     }
 
-    /** Первый образец вида вносит его в гено-древо. */
+    /** The first sample of a species adds it to the gene tree. */
     private static void discover(ServerPlayer player, Strain strain) {
         MutagenKnowledge knowledge = MutagenKnowledge.get(player.server);
         if (knowledge.discover(player.getUUID(), strain.id())) {
@@ -121,8 +120,8 @@ public class SyringeItem extends Item {
     }
 
     /**
-     * Качество образца. Ослабленный и обездвиженный организм отдаёт материал охотнее,
-     * детёныш не отдаёт почти ничего, а моб из спавнера — «истощённая линия».
+     * Sample quality improves if the creature is weakened or restrained. Babies yield almost nothing and
+     * spawner mobs yield lower-quality samples.
      */
     public static float quality(LivingEntity target, float bonus) {
         float quality = 50.0F + bonus;
@@ -143,7 +142,7 @@ public class SyringeItem extends Item {
         return Math.max(5.0F, Math.min(100.0F, quality));
     }
 
-    /** Спит, сидит в лодке или верхом, на поводке или сильно замедлен — то есть не вырывается. */
+    /** Treat sleeping, riding a boat or mount, being leashed, or being heavily slowed as restrained. */
     private static boolean restrained(LivingEntity target) {
         if (target.isSleeping() || target.isPassenger() || (target instanceof Mob mob && mob.isLeashed())) {
             return true;

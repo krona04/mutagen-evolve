@@ -11,7 +11,7 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * Общая часть экранов лабораторных машин: слоты игрока, прогресс и перенос предметов шифтом.
+ * Shared machine menu logic for player slots, progress, and shift-click transfers.
  */
 public abstract class MachineMenu extends AbstractContainerMenu {
     protected final Container container;

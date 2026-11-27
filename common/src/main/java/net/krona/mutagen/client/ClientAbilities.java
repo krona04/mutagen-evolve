@@ -8,6 +8,7 @@ import net.krona.mutagen.data.MutagenData;
 import net.krona.mutagen.data.MutagenPlayer;
 import net.krona.mutagen.knowledge.ClientKnowledge;
 import net.krona.mutagen.knowledge.Research;
+import net.krona.mutagen.network.MutagenNetwork.AbilityUsedPayload;
 import net.krona.mutagen.strain.Stage;
 import net.krona.mutagen.strain.Strain;
 import net.krona.mutagen.strain.Strains;
@@ -22,27 +23,22 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Клиентская сторона способностей: что доступно и сколько осталось до готовности.
+ * Client-side ability availability and cooldowns.
  * <p>
- * Список берётся из того же штамма, что уже пришёл с сервера, поэтому интерфейс знает о
- * способностях всё, не спрашивая ничего дополнительно. Перезарядку клиент заводит по
- * подтверждению сервера и отсчитывает сам — она нужна только чтобы рисовать полоску.
+ * The UI reads abilities from the strain synchronized by the server. The server sends cooldown end times on
+ * join and when abilities activate.
  */
 @Environment(EnvType.CLIENT)
 public final class ClientAbilities {
-    /** Номер способности в штамме -> тик, когда она снова готова. */
+    /** Key cooldowns by strain and ability index. */
     private record CooldownKey(ResourceLocation strain, int index) {}
-    private static final Map<CooldownKey, Long> COOLDOWNS = new HashMap<>();
-    private static final Map<CooldownKey, Integer> LENGTHS = new HashMap<>();
+    private static final Map<CooldownKey, AbilityUsedPayload> COOLDOWNS = new HashMap<>();
     private static Object connection;
-    /** Штамм, к которому относятся перезарядки: другое тело начинает с чистого листа. */
-    @Nullable
-    private static ResourceLocation owner;
 
     private ClientAbilities() {
     }
 
-    /** Способности текущего штамма вместе с их номерами. Пустой список, если штамма нет. */
+    /** Indexed abilities for the current strain, or an empty list when the player has no strain. */
     public static List<Slot> slots() {
         Minecraft minecraft = Minecraft.getInstance();
         LocalPlayer player = minecraft.player;
@@ -76,7 +72,7 @@ public final class ClientAbilities {
         return slots;
     }
 
-    /** Номер способности, привязанной к этой клавише, или -1. */
+    /** Ability index for this key, or -1. */
     public static int indexForKey(int keySlot) {
         List<Slot> slots = slots();
         int seen = 0;
@@ -92,7 +88,7 @@ public final class ClientAbilities {
         return -1;
     }
 
-    /** Номер апекса или -1. */
+    /** Apex ability index, or -1. */
     public static int apexIndex() {
         for (Slot slot : slots()) {
             if (slot.ability().apex()) {
@@ -102,67 +98,48 @@ public final class ClientAbilities {
         return -1;
     }
 
-    public static void startCooldown(int index, int ticks) {
-        Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.level == null) {
-            return;
-        }
-        checkOwner();
-        COOLDOWNS.put(new CooldownKey(owner, index), minecraft.level.getGameTime() + ticks);
-        LENGTHS.put(new CooldownKey(owner, index), ticks);
+    public static void startCooldown(AbilityUsedPayload cooldown) {
+        checkConnection(Minecraft.getInstance());
+        COOLDOWNS.put(new CooldownKey(cooldown.strain(), cooldown.index()), cooldown);
     }
 
-    /** Доля оставшейся перезарядки: 0 — готово, 1 — только что применили. */
+    /** Remaining cooldown as a fraction. Zero means ready and one means just activated. */
     public static float cooldownFraction(int index) {
         Minecraft minecraft = Minecraft.getInstance();
-        checkOwner();
-        CooldownKey key = new CooldownKey(owner, index);
-        Long ready = COOLDOWNS.get(key);
-        Integer length = LENGTHS.get(key);
-        if (minecraft.level == null || ready == null || length == null || length <= 0) {
+        AbilityUsedPayload cooldown = cooldown(minecraft, index);
+        if (minecraft.level == null || cooldown == null || cooldown.duration() <= 0) {
             return 0.0F;
         }
-        long left = ready - minecraft.level.getGameTime();
-        if (left <= 0) {
-            COOLDOWNS.remove(key);
-            LENGTHS.remove(key);
-            return 0.0F;
-        }
-        return Math.min(1.0F, left / (float) length);
+        return cooldown.remaining(minecraft.level.getGameTime()) / (float) cooldown.duration();
     }
 
-    /** Сколько секунд перезарядки осталось, с округлением вверх; 0 — готово. */
+    /** Remaining cooldown in seconds, rounded up. Zero means ready. */
     public static int cooldownSeconds(int index) {
         Minecraft minecraft = Minecraft.getInstance();
-        checkOwner();
-        Long ready = COOLDOWNS.get(new CooldownKey(owner, index));
-        if (minecraft.level == null || ready == null) {
+        AbilityUsedPayload cooldown = cooldown(minecraft, index);
+        if (minecraft.level == null || cooldown == null) {
             return 0;
         }
-        long left = ready - minecraft.level.getGameTime();
-        return left <= 0 ? 0 : (int) ((left + 19) / 20);
+        return (int) ((cooldown.remaining(minecraft.level.getGameTime()) + 19) / 20);
     }
 
-    private static void checkOwner() {
-        LocalPlayer player = Minecraft.getInstance().player;
+    @Nullable
+    private static AbilityUsedPayload cooldown(Minecraft minecraft, int index) {
+        checkConnection(minecraft);
+        LocalPlayer player = minecraft.player;
         MutagenData.Gene gene = player == null ? null : MutagenPlayer.of(player).primary();
-        ResourceLocation current = gene == null ? null : gene.strainId();
-        Object currentConnection = Minecraft.getInstance().getConnection();
+        return gene == null ? null : COOLDOWNS.get(new CooldownKey(gene.strainId(), index));
+    }
+
+    private static void checkConnection(Minecraft minecraft) {
+        Object currentConnection = minecraft.getConnection();
         if (connection != currentConnection) {
-            clear();
+            COOLDOWNS.clear();
             connection = currentConnection;
         }
-        owner = current;
     }
 
-    public static void clear() {
-        COOLDOWNS.clear();
-        LENGTHS.clear();
-        owner = null;
-        connection = null;
-    }
-
-    /** Способность вместе с её номером и тем, доступна ли она сейчас. */
+    /** An indexed ability and whether the player can currently use it. */
     public record Slot(int index, Ability ability, boolean unlocked) {
         @Nullable
         public Ability abilityOrNull() {

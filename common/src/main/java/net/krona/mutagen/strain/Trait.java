@@ -11,68 +11,68 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * Черта штамма: то, что штамм даёт или отнимает у носителя.
+ * A strain trait that grants a benefit or imposes a restriction.
  * <p>
- * С 0.2 черты читаются из датапака: у каждой есть {@link TraitType}, который знает её JSON-формат.
+ * Since 0.2, traits come from datapacks. Each {@link TraitType} defines its JSON schema.
  */
 public interface Trait {
-    /** Тип черты — по нему черта пишется в JSON и узнаётся при чтении. */
+    /** Trait type used for JSON encoding and decoding. */
     TraitType<?> type();
 
-    /** Стадия, начиная с которой черта работает. */
+    /** Earliest stage at which the trait is active. */
     Stage minStage();
 
-    /** Короткое описание для подсказок и гено-древа. */
+    /** Short description for tooltips and the gene tree. */
     Component description();
 
-    /** Слабость или сила. Гено-древо красит слабости красным, силы — зелёным. */
+    /** The gene tree shows weaknesses in red and strengths in green. */
     default boolean weakness() {
         return false;
     }
 
-    /** Раз в секунду на сервере, пока стадия не ниже {@link #minStage()}. */
+    /** Runs once per second on the server at or above {@link #minStage()}. */
     default void tick(ServerPlayer player, Stage stage) {
     }
 
-    /** Постоянные модификаторы атрибутов. Пересобираются при каждой смене стадии. */
+    /** Persistent attribute modifiers rebuilt when the stage changes. */
     default void attributes(Stage stage, AttributeSink sink) {
     }
 
-    /** Множитель входящего урона: слабости и иммунитеты. */
+    /** Incoming damage multiplier for weaknesses and immunities. */
     default float modifyIncomingDamage(DamageSource source, float amount, Stage stage) {
         return amount;
     }
 
-    /** Признаёт ли этот вид носителя своим и перестаёт ли на него нападать. */
+    /** Whether the species recognizes this player and becomes non-hostile. */
     default boolean pacifies(net.minecraft.world.entity.EntityType<?> kind, Stage stage) {
         return false;
     }
 
-    /** Иммунитет к эффектам. */
+    /** Status-effect immunity. */
     default boolean blocksEffect(Holder<MobEffect> effect, Stage stage) {
         return false;
     }
 
-    /** Лазает ли носитель по стенам. Спрашивается на обеих сторонах: движение считает клиент. */
+    /** Whether the player can climb walls. Check both sides because the client handles movement. */
     default boolean climbs(Stage stage) {
         return false;
     }
 
-    /** Проходит ли носитель сквозь паутину, не застревая. Тоже на обеих сторонах. */
+    /** Whether the player can move through cobwebs. Check both sides. */
     default boolean walksThroughWebs(Stage stage) {
         return false;
     }
 
-    /** Не отдаёт этот предмет: выбросить его из инвентаря нельзя. */
+    /** Prevent dropping this item from the inventory. */
     default boolean hoards(ItemStack stack, Stage stage) {
         return false;
     }
 
-    /** Носитель ударил кого-то в ближнем бою. Только сервер. */
+    /** The player hit a target in melee. Server only. */
     default void onMeleeHit(ServerPlayer player, LivingEntity target, Stage stage) {
     }
 
-    /** Носителя ударили в ближнем бою. Только сервер. */
+    /** The player was hit in melee. Server only. */
     default void onMeleeHurt(ServerPlayer player, LivingEntity attacker, Stage stage) {
     }
 

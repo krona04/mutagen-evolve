@@ -5,7 +5,7 @@ import net.fabricmc.api.Environment;
 import net.krona.mutagen.strain.Stage;
 
 /**
- * Клиентское состояние: вспышка на экране при переходе между стадиями.
+ * Store the client-side screen flash for stage transitions.
  */
 @Environment(EnvType.CLIENT)
 public final class MutagenClientState {

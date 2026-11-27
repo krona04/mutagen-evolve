@@ -24,12 +24,11 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Синтезатор: геном + мутагенная основа + катализатор дают сыворотку.
- * Топлива не требует — платой служат сами реагенты.
+ * Combine a genome, mutagen base, and catalyst to make serum. The reagents are the only cost.
  * <p>
- * С 0.2 синтез требует изученности вида: ниже 25% он невозможен, а потолок сыворотки
- * задаётся порогом (40 / 70 / 100%). Цена синтеза — катализатор, его количество и время —
- * берётся из данных штамма (0.2.1), а чистый геном от 85% даёт две ампулы.
+ * Since 0.2, synthesis requires at least 25% species research. Research thresholds cap the serum at 40%,
+ * 70%, or 100%. In 0.2.1 the strain defines the catalyst, quantity, and processing time. Genome purity of
+ * at least 85% gives two vials.
  */
 public class SynthesizerBlockEntity extends MachineBlockEntity {
     public static final int SLOT_GENOME = 0;
@@ -41,7 +40,7 @@ public class SynthesizerBlockEntity extends MachineBlockEntity {
         super(MutagenBlocks.SYNTHESIZER_ENTITY.get(), pos, state, 4, Strain.Synthesis.DEFAULT.time());
     }
 
-    /** Сколько ампул даёт геном такой чистоты. */
+    /** Number of serum vials produced at the given genome purity. */
     public static int serumYield(float purity) {
         return purity >= MutagenConfig.get().doubleSerumPurity ? 2 : 1;
     }
@@ -119,7 +118,7 @@ public class SynthesizerBlockEntity extends MachineBlockEntity {
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
-        // Время синтеза зависит от штамма в слоте и пересчитывается в первом же тике.
+        // Recalculate the synthesis time for the strain in the slot on the first tick.
         if (tag.contains("MaxProgress")) {
             maxProgress = Math.max(1, tag.getInt("MaxProgress"));
         }

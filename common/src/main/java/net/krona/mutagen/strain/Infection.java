@@ -4,28 +4,27 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Как трансформация проходит по телу. Заражение не накрывает всё тело разом: оно начинается там,
- * куда вошла игла, и кость за костью расходится дальше. Каждая кость меняется в своём окне прогресса,
- * и окна идут внахлёст — когда рука уже почти чужая, до ног заражение только доходит.
+ * Infection spreads from the injection site, one bone at a time. Bone progress windows overlap, so legs can
+ * start changing while the arm is almost transformed.
  * <p>
- * Чистая математика: одинаково считается везде, где известен прогресс.
+ * The calculation is deterministic and needs only the progress value.
  */
 public final class Infection {
-    /** Заражение начинается со стадии II. */
+    /** Infection starts at stage II. */
     public static final float START = 21.0F;
-    /** Сколько процентов прогресса занимает перестройка одной кости. */
+    /** Share of overall progress spent transforming one bone. */
     public static final float SPAN = 45.0F;
-    /** Последняя кость заканчивает ровно к полной форме. */
+    /** The final bone finishes when the player reaches full form. */
     private static final float LAST_START = 100.0F - SPAN;
 
-    /** Порядок по умолчанию: игла входит в правую руку. */
+    /** The default order starts at the right arm, the injection site. */
     private static final List<Strain.Bone> DEFAULT_ORDER = List.of(Strain.Bone.RIGHT_ARM, Strain.Bone.BODY,
             Strain.Bone.LEFT_ARM, Strain.Bone.HEAD, Strain.Bone.RIGHT_LEG, Strain.Bone.LEFT_LEG);
 
     private Infection() {
     }
 
-    /** Порядок заражения костей: сначала то, что задал штамм, потом остальные в порядке по умолчанию. */
+    /** Use the strain's bone order first, followed by any remaining bones in default order. */
     public static List<Strain.Bone> order(Strain.Body body) {
         List<Strain.Bone> order = new ArrayList<>(DEFAULT_ORDER.size());
         for (Strain.Bone bone : body.spread()) {
@@ -41,7 +40,7 @@ public final class Infection {
         return order;
     }
 
-    /** Насколько перестроена кость, 0–1. */
+    /** Bone transformation progress from 0 to 1. */
     public static float bonePhase(Strain strain, Strain.Bone bone, float progress) {
         int index = strain.spreadIndex(bone);
         int last = Strain.Bone.values().length - 1;
@@ -49,7 +48,7 @@ public final class Infection {
         return clamp((progress - start) / SPAN);
     }
 
-    /** Насколько перестроено тело в целом, 0–1: от начала заражения до полной формы. */
+    /** Overall body transformation from 0 to 1, from the start of infection through full form. */
     public static float overall(float progress) {
         return clamp((progress - START) / (100.0F - START));
     }

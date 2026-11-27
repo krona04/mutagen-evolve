@@ -9,6 +9,7 @@ import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.ExtraCodecs;
+import net.minecraft.util.Mth;
 import net.krona.mutagen.ability.Abilities;
 import net.krona.mutagen.ability.Ability;
 import net.minecraft.world.entity.EntityType;
@@ -22,15 +23,15 @@ import java.util.Locale;
 import java.util.Optional;
 
 /**
- * Описание штамма: от какого существа взят геном, как он меняет тело и чем за это платит носитель.
+ * A strain defines its source creature, body changes, and the cost to the player.
  * <p>
- * С 0.2 штаммы живут в датапаках: {@code data/<namespace>/mutagen/strains/<name>.json},
- * id штамма — {@code <namespace>:<name>}. Формат описан в {@code docs/DESIGN.md}.
+ * Since 0.2, datapacks define strains in {@code data/<namespace>/mutagen/strains/<name>.json} under ID
+ * {@code <namespace>:<name>}. See {@code docs/DESIGN.md} for the format.
  */
 public final class Strain {
     private static final int DEFAULT_COLOR = 0x7FAE6B;
 
-    /** Цвет пишется числом или строкой {@code "#RRGGBB"}. */
+    /** Write a color as a number or a {@code "#RRGGBB"} string. */
     private static final Codec<Integer> COLOR_CODEC = Codec.withAlternative(Codec.INT,
             Codec.STRING.comapFlatMap(Strain::parseColor, color -> String.format("#%06X", color)));
 
@@ -57,9 +58,9 @@ public final class Strain {
     private final List<Trait> traits;
     private final List<Ability> abilities;
     private final Optional<Vision> vision;
-    /** Черты, активные на каждой стадии: считаются один раз, а спрашиваются каждую секунду. */
+    /** Precompute the active traits for each stage because they are queried every second. */
     private final List<List<Trait>> byStage;
-    /** Место каждой кости в очереди заражения: считается один раз, спрашивается каждый кадр. */
+    /** Precompute each bone's place in the infection order because it is queried every frame. */
     private final int[] spreadIndex;
 
     public Strain(ResourceLocation id, EntityType<?> entityType, int color, float targetScale, int difficulty,
@@ -112,20 +113,20 @@ public final class Strain {
         return entityType;
     }
 
-    /** Цвет для оверлея кожи, частиц и интерфейса. */
+    /** Color for the skin overlay, particles, and UI. */
     public int color() {
         return color;
     }
 
     /**
-     * Общий масштаб модели носителя. Форму тела задаёт сама модель существа, поэтому для штаммов
-     * с моделью он остаётся 1; нужен только штаммам без модели, которые меняют лишь кожу.
+     * Overall model scale. The creature model already supplies its form, so keep scale at 1 for strains
+     * with a model. Skin-only strains can use this value.
      */
     public float targetScale() {
         return targetScale;
     }
 
-    /** Сложность вида: чем выше, тем медленнее секвенирование. */
+    /** Species difficulty. Higher values slow sequencing. */
     public int difficulty() {
         return difficulty;
     }
@@ -139,8 +140,7 @@ public final class Strain {
     }
 
     /**
-     * Хитбокс и глаза в полной форме — те же, что у самого существа в игре, если штамм не задал своих.
-     * Так превращённый игрок занимает ровно столько места, сколько занимал бы моб.
+     * In full form, use the creature's hitbox and eye height unless the strain overrides them.
      */
     public float targetWidth() {
         return body.width().orElseGet(() -> entityType.getDimensions().width());
@@ -155,19 +155,19 @@ public final class Strain {
     }
 
     /**
-     * Слой модели существа для гибридных стадий: {@code "minecraft:zombie"} или {@code "minecraft:zombie#main"}.
-     * По умолчанию — id самого существа, так названы слои почти всех ванильных мобов.
+     * Creature model layer for hybrid stages, such as {@code "minecraft:zombie"} or {@code
+     * "minecraft:zombie#main"}. Defaults to the entity ID used by most vanilla layers.
      */
     public String modelLayer() {
         return body.modelLayer().orElseGet(() -> BuiltInRegistries.ENTITY_TYPE.getKey(entityType) + "#main");
     }
 
-    /** Активные способности штамма. Порядок задаёт номера, которыми их зовёт клиент. */
+    /** Active abilities in the index order used by the client. */
     public List<Ability> abilities() {
         return abilities;
     }
 
-    /** Апекс, если он у штамма есть. */
+    /** The strain's apex ability, if present. */
     public java.util.Optional<Ability> apex() {
         return abilities.stream().filter(Ability::apex).findFirst();
     }
@@ -177,9 +177,8 @@ public final class Strain {
     }
 
     /**
-     * Под каким именем штамм ищут авторские графики превращения: путь id у встроенных штаммов и
-     * {@code "custom"} у всех остальных. Штамм из датапака {@code my_pack:zombie} — не встроенный зомби
-     * и не должен получать его хореографию по совпадению имени.
+     * Find custom timing by the ID path for built-in strains and use {@code "custom"} for others. A
+     * datapack strain such as {@code my_pack:zombie} does not share the built-in zombie's timing.
      */
     public String profile() {
         return id.getNamespace().equals("mutagen") ? id.getPath() : "custom";
@@ -198,8 +197,8 @@ public final class Strain {
     }
 
     /**
-     * Имя штамма. Если у штамма из чужого датапака нет перевода, имя собирается из имени существа —
-     * игрок увидит «Штамм: Ведьма», а не сырой ключ.
+     * Display name of the strain. If a datapack provides no translation, use the creature name so the
+     * player sees a label such as Strain: Witch instead of a raw key.
      */
     public Component displayName() {
         String key = translationKey();
@@ -210,8 +209,8 @@ public final class Strain {
     }
 
     /**
-     * Цена синтеза: какой катализатор нужен, сколько его уходит за прогон и сколько тиков идёт работа.
-     * Сложные виды стоят дороже — это часть баланса 0.2.1.
+     * Synthesis catalyst, quantity per run, and processing time in ticks. More difficult species cost more
+     * in 0.2.1.
      */
     public record Synthesis(Optional<Item> catalystItem, int catalystCount, int time) {
         public static final Synthesis DEFAULT = new Synthesis(Optional.empty(), 1, 300);
@@ -227,7 +226,7 @@ public final class Strain {
         }
     }
 
-    /** Кость игрока, на которую садится часть существа. */
+    /** Player bone that the creature part attaches to. */
     public enum Bone {
         HEAD("head"), BODY("body"), RIGHT_ARM("right_arm"), LEFT_ARM("left_arm"),
         RIGHT_LEG("right_leg"), LEFT_LEG("left_leg");
@@ -259,13 +258,12 @@ public final class Strain {
     }
 
     /**
-     * Часть существа и кость игрока, которая в неё превращается. {@code part} — путь части в модели существа
-     * ({@code "head"}, {@code "body/tail"}), {@code bone} — кость игрока; если часть называется как кость,
-     * кость можно не писать.
+     * Creature part and its corresponding player bone. {@code part} is a path such as {@code "head"} or
+     * {@code "body/tail"}. Omit {@code bone} if the part has the same name as the bone.
      * <p>
-     * Обычная часть — цель превращения: кость игрока плавно принимает её размеры и положение.
-     * {@code grow} — часть, которой у человека нет (задние ноги крипера, хвост): она вырастает из тела
-     * на своём месте и двигается вместе с {@code bone}. {@code scale} — поправка к размеру части.
+     * A regular part supplies the target dimensions and position for the bone. A {@code grow} part, such as
+     * a tail or creeper hind leg, has no human equivalent and grows from its attachment {@code bone}.
+     * {@code scale} adjusts part size.
      */
     public record Part(String part, Bone bone, boolean grow, Vector3f scale) {
         private static final Vector3f ONE = new Vector3f(1.0F, 1.0F, 1.0F);
@@ -294,8 +292,8 @@ public final class Strain {
     }
 
     /**
-     * Откуда берутся цвета заражённой кожи: {@code texture} — из текстуры самого существа (если её раскладка
-     * совпадает с человеческой, как у зомби, скелета и головы крипера), {@code color} — из цвета штамма.
+     * Source of infected skin color. Use {@code texture} to sample compatible creature UVs, such as zombie
+     * and skeleton UVs or a creeper head. Use {@code color} for the strain's tint.
      */
     public enum SkinSource {
         COLOR("color"), TEXTURE("texture");
@@ -321,8 +319,8 @@ public final class Strain {
     }
 
     /**
-     * Поза кости к полной форме: поворот в градусах, который добавляется к её движению. Форму кости
-     * задаёт модель существа, а здесь — только осанка: вытянутые руки зомби, опущенная голова.
+     * Rotation in degrees added to a bone's animation by full form. The creature model supplies its shape,
+     * while this controls posture, such as outstretched zombie arms or a lowered head.
      */
     public record Morph(Bone bone, Vector3f rotation) {
         public static final Codec<Morph> CODEC = RecordCodecBuilder.create(instance -> instance.group(
@@ -332,13 +330,13 @@ public final class Strain {
     }
 
     /**
-     * Тело штамма: как по нему идёт заражение, в какие части существа превращаются кости игрока,
-     * какие кости втягиваются, как меняется поза и какие у носителя габариты в полной форме.
+     * Strain body settings for infection order, bone targets, retracting parts, posture, and full-form
+     * dimensions.
      */
     /**
-     * Дополнительный слой существа поверх основного: одежда и водоросли утопленника, светящиеся глаза
-     * паука. Ваниль рисует их отдельными слоями рендера, и на гибриде без них существо выглядело бы
-     * голым. {@code model_layer} — слой модели (по умолчанию основной), {@code emissive} — светится в темноте.
+     * Extra creature render layer for details such as drowned clothing or glowing spider eyes. {@code
+     * model_layer} selects the layer and defaults to the main one. Set {@code emissive} to make it glow in
+     * the dark.
      */
     public record Overlay(Optional<String> modelLayer, ResourceLocation texture, boolean emissive) {
         public static final Codec<Overlay> CODEC = RecordCodecBuilder.create(instance -> instance.group(
@@ -369,21 +367,29 @@ public final class Strain {
         ).apply(instance, Body::new));
     }
 
-    /** Как видит мир носитель: эффект экрана с этой стадии. Включается настройкой {@code mobVision}. */
+    /** Creature vision screen effect from the specified stage. Enabled through {@code mobVision}. */
     public Optional<Vision> vision() {
         return vision;
     }
 
     /**
-     * Зрение существа: {@code shader} — цепочка эффектов экрана ({@code shaders/post/*.json}), та же, что у
-     * ванили для взгляда крипера или паука в режиме зрителя, {@code from_stage} — с какой стадии зрение
-     * начинает меняться. Дальше оно набирает силу вместе с телом и становится полным к полной форме.
+     * The {@code shader} is a post-processing chain ({@code shaders/post/*.json}), like vanilla creeper or
+     * spider spectator vision. {@code from_stage} defines when it begins. Its strength reaches maximum in
+     * full form.
      */
     public record Vision(ResourceLocation shader, Stage minStage) {
         public static final Codec<Vision> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                 ResourceLocation.CODEC.fieldOf("shader").forGetter(Vision::shader),
                 Stage.CODEC.optionalFieldOf("from_stage", Stage.MANIFESTATION).forGetter(Vision::minStage)
         ).apply(instance, Vision::new));
+
+        public float strength(float progress) {
+            int threshold = minStage.threshold();
+            if (minStage == Stage.FULL) {
+                return progress >= threshold ? 1.0F : 0.0F;
+            }
+            return Mth.clamp((progress - threshold) / (100.0F - threshold), 0.0F, 1.0F);
+        }
     }
 
     @Override

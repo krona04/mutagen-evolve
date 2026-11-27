@@ -14,14 +14,14 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Тело, которое не до конца слушается хозяина.
+ * Involuntary body motion.
  * <p>
- * <b>Судороги.</b> Переход на новую стадию — это ломка: пару секунд тело выкручивает, голова дёргается,
- * руки ходят ходуном, и дрожь затухает. Видят это все, кто смотрит на носителя, а не только он сам.
+ * <b>Convulsions.</b> On a stage transition, animate twisting, head jerks, and arm movement for a couple of
+ * seconds before the tremor subsides. Nearby players see it too.
  * <p>
- * <b>Подёргивания.</b> Со стадии III раз в несколько секунд одна кость коротко и резко дёргается
- * сама по себе — на IV чаще и сильнее. Расписание берётся из UUID игрока, поэтому у каждого носителя
- * свой ритм, одинаковый на всех клиентах.
+ * <b>Twitches.</b> Starting at stage III, a single bone jerks every few seconds. Twitches grow more
+ * frequent and stronger at stage IV. Derive their schedule from the player's UUID so all clients see the
+ * same rhythm.
  */
 @Environment(EnvType.CLIENT)
 public final class BodyMotion {
@@ -31,7 +31,7 @@ public final class BodyMotion {
     private BodyMotion() {
     }
 
-    /** Стадия выросла: запустить судороги у этого игрока. */
+    /** Start a convulsion for this player when the stage increases. */
     public static void startConvulsion(Player player) {
         CONVULSIONS.put(player.getId(), gameTime());
     }
@@ -75,7 +75,8 @@ public final class BodyMotion {
     }
 
     /**
-     * Одно подёргивание за окно в {@code period} тиков: момент и кость выбираются хешем от UUID и номера окна.
+     * Schedule one twitch per window of {@code period} ticks. Hash the player's UUID and the window number
+     * to choose the bone and timing.
      */
     private static void twitch(PlayerModel<?> model, Player player, Stage stage, float weight) {
         if (!stage.atLeast(Stage.MUTATION)) {
@@ -92,7 +93,7 @@ public final class BodyMotion {
         if (inside < 0 || inside >= length) {
             return;
         }
-        // Резкий рывок и спад: синус по полупериоду.
+        // Use a half-cycle sine wave for a sharp twitch followed by a falloff.
         float amount = Mth.sin((inside / (float) length) * Mth.PI) * (strong ? 0.30F : 0.18F) * weight;
         float sign = (hash & 1L) == 0 ? 1.0F : -1.0F;
         switch ((int) Math.floorMod(hash >>> 8, 3)) {

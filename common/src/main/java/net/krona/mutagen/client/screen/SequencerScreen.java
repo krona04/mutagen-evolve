@@ -22,7 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Экран секвенатора: слева образец и редстоун, справа — что сейчас читается и сколько уже прочитано.
+ * Show sample and redstone on the left, and the current species and research progress on the right.
  */
 @Environment(EnvType.CLIENT)
 public class SequencerScreen extends MachineScreen<SequencerMenu> {

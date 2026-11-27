@@ -26,8 +26,8 @@ import java.util.Comparator;
 import java.util.List;
 
 /**
- * Экран верстака биолога. Слева — список всех сборок: что получится и что для этого нужно.
- * Клик по строке раскладывает ингредиенты из инвентаря; то, что уже можно собрать, подсвечено.
+ * The bio workbench lists recipes and ingredients on the left. Clicking a row moves ingredients from the
+ * inventory. Recipes that can be crafted are highlighted.
  */
 @Environment(EnvType.CLIENT)
 public class BioWorkbenchScreen extends AbstractContainerScreen<BioWorkbenchMenu> {
@@ -48,7 +48,7 @@ public class BioWorkbenchScreen extends AbstractContainerScreen<BioWorkbenchMenu
     @Override
     protected void init() {
         super.init();
-        // Окно и панель рецептов вместе стоят по центру экрана.
+        // Center the main screen and recipe panel together.
         leftPos = (width - imageWidth - PANEL_WIDTH) / 2 + PANEL_WIDTH;
     }
 
@@ -108,13 +108,13 @@ public class BioWorkbenchScreen extends AbstractContainerScreen<BioWorkbenchMenu
         }
     }
 
-    /** Для тегов показываем предметы по очереди, раз в секунду. */
+    /** Cycle through items in a tag once per second. */
     private static ItemStack displayed(Ingredient ingredient, int time) {
         ItemStack[] items = ingredient.getItems();
         return items.length == 0 ? ItemStack.EMPTY : items[Math.floorMod(time, items.length)];
     }
 
-    /** Хватает ли ингредиентов в инвентаре и на столе, чтобы собрать рецепт хотя бы раз. */
+    /** Whether the inventory and workbench contain enough ingredients to craft the recipe once. */
     private boolean canCraft(BioWorkbenchRecipe recipe) {
         for (BioWorkbenchRecipe.CountedIngredient ingredient : recipe.ingredients()) {
             if (available(ingredient.ingredient()) < ingredient.count()) {
@@ -203,7 +203,7 @@ public class BioWorkbenchScreen extends AbstractContainerScreen<BioWorkbenchMenu
 
     @Override
     protected boolean hasClickedOutside(double mouseX, double mouseY, int left, int top, int button) {
-        // Клик по панели рецептов — не «клик мимо окна», предметы из курсора выбрасывать нельзя.
+        // Treat clicks in the recipe panel as inside the menu so they do not drop the carried item.
         return super.hasClickedOutside(mouseX, mouseY, left, top, button)
                 && !(mouseX >= panelLeft() && mouseX < leftPos && mouseY >= topPos && mouseY < topPos + imageHeight);
     }

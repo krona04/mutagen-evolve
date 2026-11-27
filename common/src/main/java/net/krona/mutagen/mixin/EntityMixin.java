@@ -12,8 +12,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * Паутина не держит носителя паучьего штамма — как не держит самого паука. Ягодные кусты и
- * рыхлый снег держат по-прежнему: у них своя цена.
+ * Let spider strains move through cobwebs. Berry bushes and powder snow still slow them.
  */
 @Mixin(Entity.class)
 public abstract class EntityMixin {

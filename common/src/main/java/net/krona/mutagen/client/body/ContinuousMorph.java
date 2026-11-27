@@ -12,13 +12,12 @@ import java.util.Map;
 import java.util.WeakHashMap;
 
 /**
- * Основной метод превращения: шесть костей игрока непрерывно деформируются в части модели существа,
- * а кожа меняется по пикселям. Работает для любого штамма, в том числе из датапака.
+ * Continuously reshape the player's six bones into creature parts and change skin pixel by pixel. Supports
+ * built-in and datapack strains.
  * <p>
- * У встроенных штаммов поверх этого — авторские графики, позы и разбиение тела ({@link #builtIn}).
- * Штамм из датапака получает общий вариант: кости меняются в порядке {@code spread}, кость без пары
- * в модели существа вливается в корпус, а несколько костей на одной части делят её объём, не налезая
- * друг на друга. Старый путь (части поверх игрока) остаётся только для моделей, где нет корпуса, и для паука.
+ * Built-in strains supply custom timing, poses, and body partitions ({@link #builtIn}). Datapack strains
+ * transform bones in {@code spread} order, merge unmatched bones into the torso, and split shared parts
+ * without overlap. Models without a torso and the spider use the older overlay renderer.
  */
 public final class ContinuousMorph {
     private static final Map<Strain, Boolean> GENERIC = new WeakHashMap<>();
@@ -31,7 +30,7 @@ public final class ContinuousMorph {
         return GENERIC.computeIfAbsent(strain, ContinuousMorph::usable);
     }
 
-    /** Встроенные штаммы с авторской хореографией превращения. */
+    /** Built-in strains with custom transformation sequences. */
     public static boolean builtIn(Strain strain) {
         if (!strain.id().getNamespace().equals("mutagen")) return false;
         return switch(strain.id().getPath()) {
@@ -41,12 +40,12 @@ public final class ContinuousMorph {
         };
     }
 
-    /** Имя профиля для таблиц графиков: встроенный путь или {@code "custom"}. */
+    /** Profile name for the timing tables, either built-in or {@code "custom"}. */
     public static String profile(Strain strain) {
         return builtIn(strain) ? strain.id().getPath() : "custom";
     }
 
-    /** Общему методу нужен корпус и хотя бы один куб у каждой части, во что превращаются кости. */
+    /** The shared morph needs a torso and at least one cube in each target part. */
     private static boolean usable(Strain strain) {
         try {
             MorphPlan plan = MorphPlan.of(strain);
@@ -75,8 +74,8 @@ public final class ContinuousMorph {
     }
 
     /**
-     * График кости у штамма из датапака: каждая следующая кость в порядке {@code spread} начинает чуть
-     * позже, но все заканчивают к полной форме вместе.
+     * Datapack morph timing. Each bone in {@code spread} order starts later, and all finish together in
+     * full form.
      */
     public static float customPhase(Strain strain, Strain.Bone bone, float progress) {
         return MorphSequence.window(Infection.overall(progress), 0.04F + 0.06F * strain.spreadIndex(bone), 1);
@@ -107,7 +106,7 @@ public final class ContinuousMorph {
         MorphPlan.Target target=plan.target(bone);
         if(target!=null) return target;
         if(bone!=Strain.Bone.BODY && strain.body().absorb().contains(bone)) return plan.target(Strain.Bone.BODY);
-        // Кость, которой у существа нет пары, вливается в корпус, а не висит человеческой.
+        // Merge unmatched bones into the torso.
         if(bone!=Strain.Bone.BODY && !builtIn(strain)) return plan.target(Strain.Bone.BODY);
         if(bone==Strain.Bone.BODY && strain.id().getPath().equals("blaze"))
             return plan.grown().stream().filter(t -> t.part().part().equals("part0")).findFirst().orElse(null);
@@ -120,7 +119,7 @@ public final class ContinuousMorph {
                 || bone==Strain.Bone.BODY && !strain.body().absorb().isEmpty();
     }
 
-    /** Кости, которые превращаются в ту же часть существа, что и эта, в порядке костей. */
+    /** Bones that transform into the same creature part, in bone order. */
     public static List<Strain.Bone> sharers(Strain strain, Strain.Bone bone) {
         MorphPlan plan=MorphPlan.of(strain);
         MorphPlan.Target own=target(strain,plan,bone);
@@ -134,8 +133,8 @@ public final class ContinuousMorph {
     }
 
     /**
-     * Кость, которая несёт на себе мелкие детали общей части (нос, уши, складки) — одна на группу,
-     * иначе они рисовались бы по разу на каждую кость.
+     * Assign shared details such as noses, ears, and folds to one bone per group to prevent duplicate
+     * draws.
      */
     public static boolean carrier(Strain strain, Strain.Bone bone) {
         if(builtIn(strain)) return bone==Strain.Bone.BODY;
@@ -181,9 +180,8 @@ public final class ContinuousMorph {
     }
 
     /**
-     * Общее разбиение для датапаков: часть, в которую превращаются несколько костей, делится между ними
-     * по длинной оси — голова спереди или сверху, затем руки, корпус и ноги; парные кости делят свой
-     * отрезок на левую и правую половины. Так две кости никогда не ложатся в один объём.
+     * Partition a shared target along its long axis. The head comes first, followed by the arms, torso, and
+     * legs. Paired bones split their section left and right so volumes do not overlap.
      */
     public static Box share(Box whole, Strain.Bone bone, List<Strain.Bone> group) {
         List<List<Strain.Bone>> slots=new ArrayList<>();

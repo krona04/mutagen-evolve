@@ -12,10 +12,10 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * Игрок появился в поле зрения другого: тот сразу получает его облик.
+ * Send a player's mutation state to a newly tracking player.
  * <p>
- * До 0.2.1 состояние рассылалось только при изменении, и зафиксированный игрок в полной форме
- * оставался человеком для всех, кто подошёл к нему позже.
+ * Before 0.2.1, a fixed full-form player could look human to players who started tracking them after the
+ * last state update.
  */
 @Mixin(ServerEntity.class)
 public abstract class ServerEntityMixin {

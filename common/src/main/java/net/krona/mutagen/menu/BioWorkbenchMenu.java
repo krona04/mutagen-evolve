@@ -22,10 +22,10 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Optional;
 
 /**
- * Верстак биолога: шесть ячеек под реагенты и результат.
+ * Bio workbench with six ingredient slots and an output slot.
  * <p>
- * Работает только на рецептах своего типа ({@code mutagen:bio_workbench}). Ванильный верстак
- * здесь больше не прячется: всё, что собирается у биолога, собирается только у биолога.
+ * Use only recipes of type {@code mutagen:bio_workbench}. Bio workbench recipes are exclusive to this
+ * station.
  */
 public class BioWorkbenchMenu extends AbstractContainerMenu {
     public static final int INPUTS = 6;
@@ -89,7 +89,7 @@ public class BioWorkbenchMenu extends AbstractContainerMenu {
                 .orElse(ItemStack.EMPTY));
     }
 
-    /** Забрать результат: ингредиенты списываются только сейчас, а не при раскладке. */
+    /** Consume ingredients when the player takes the result. */
     private void craft(Player taker, ItemStack stack) {
         if (current == null || !current.value().consume(inputs)) {
             return;
@@ -98,8 +98,8 @@ public class BioWorkbenchMenu extends AbstractContainerMenu {
     }
 
     /**
-     * Раскладывает ингредиенты рецепта из инвентаря: сначала всё со стола уходит обратно игроку,
-     * потом каждый ингредиент кладётся в свою ячейку. Если чего-то не хватает, кладётся сколько есть.
+     * Return the current ingredients to the player, then put as many of the requested ingredients as
+     * available into their recipe slots.
      */
     public void fill(ServerPlayer target, ResourceLocation recipeId) {
         Optional<RecipeHolder<?>> holder = target.serverLevel().getRecipeManager().byKey(recipeId);
@@ -195,7 +195,7 @@ public class BioWorkbenchMenu extends AbstractContainerMenu {
         return stillValid(access, taker, MutagenBlocks.BIO_WORKBENCH.get());
     }
 
-    /** Ячейки на столе — для подсветки рецептов, которые уже можно собрать. */
+    /** Workbench slots used to highlight craftable recipes. */
     public Container inputs() {
         return inputs;
     }

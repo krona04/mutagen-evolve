@@ -98,7 +98,7 @@ public final class ContinuousMorphRenderer {
     private static Box carrierShape(Strain strain, PlayerModel<?> model, BodyMorph.Frame frame,
                                     MorphCuboid.Core core, float progress) {
         if(!ContinuousMorph.builtIn(strain)) {
-            // Корпус, в который влились другие кости, несёт детали на всём своём объёме, а не на своей доле.
+            // On a merged torso, map the extra details across the full target volume.
             if(ContinuousMorph.sharers(strain,Strain.Bone.BODY).size()<=1) return frame.shape(Strain.Bone.BODY);
             Matrix4f goal=new Matrix4f(frame.goal(Strain.Bone.BODY)).mul(core.relative());
             float t=ContinuousMorph.customPhase(strain,Strain.Bone.BODY,progress);

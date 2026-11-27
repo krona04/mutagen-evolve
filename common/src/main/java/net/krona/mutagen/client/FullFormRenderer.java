@@ -37,11 +37,10 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Полная форма: на пятой стадии вместо модели игрока рисуется настоящая модель существа.
+ * Render the creature model in place of the player model in full form.
  * <p>
- * Работает без сторонних библиотек: клиент держит по одному «манекену» на вид, каждый кадр
- * переносит на него позу игрока и отдаёт ванильному рендеру моба. Со всеми его слоями —
- * бронёй, предметом в руке, светящимися глазами паука и прочим, что мод не пришлось бы повторять.
+ * Cache one dummy per species and copy the player's pose each frame. The vanilla mob renderer supplies
+ * layers such as armor, held items, and glowing spider eyes.
  */
 @Environment(EnvType.CLIENT)
 public final class FullFormRenderer {
@@ -52,7 +51,7 @@ public final class FullFormRenderer {
     private FullFormRenderer() {
     }
 
-    /** Манекен для игрока, если тот в полной форме. Иначе null — рисуется обычный игрок. */
+    /** Return the full-form dummy, or null to render the regular player. */
     @Nullable
     public static LivingEntity dummyFor(Player player) {
         if (!MutagenConfig.get().fullFormRender) {
@@ -70,8 +69,7 @@ public final class FullFormRenderer {
     }
 
     /**
-     * Текстура существа — такая, какой её выбирает его собственный рендер. Нужна гибридным стадиям,
-     * чтобы части существа на теле игрока были того же цвета, что и само существо.
+     * Use the creature renderer's texture so hybrid parts match the creature's color.
      */
     @Nullable
     @SuppressWarnings("unchecked")
@@ -103,12 +101,12 @@ public final class FullFormRenderer {
             DUMMIES.put(type, living);
             return living;
         }
-        // Не всякая сущность годится в носители: запоминаем, чтобы не пробовать каждый кадр.
+        // Cache unsupported entity types to avoid attempting to create them every frame.
         FAILED.add(type);
         return null;
     }
 
-    /** Переносит на манекен всё, из чего рендер собирает позу. */
+    /** Copy all player state the renderer needs to pose the dummy. */
     public static void copyState(Player player, LivingEntity dummy) {
         dummy.setPos(player.getX(), player.getY(), player.getZ());
         dummy.xo = player.xo;
@@ -149,10 +147,10 @@ public final class FullFormRenderer {
     }
 
     /**
-     * Первое лицо в полной форме: вместо человеческой руки рисуется рука существа.
-     * У кого рук нет — у крипера, например, — не рисуется ничего, и это честнее человеческой ладони.
+     * Render the creature's arm in first person at full form. Creatures without arms, such as creepers,
+     * show no arm.
      *
-     * @return true, если вид от первого лица взят под управление и ванильную руку рисовать не нужно
+     * @return true if this method handled the first-person view and the vanilla arm can be skipped
      */
     @SuppressWarnings("unchecked")
     public static boolean renderFullFormHand(Player player, PoseStack poseStack, MultiBufferSource buffer,
@@ -168,7 +166,7 @@ public final class FullFormRenderer {
             return true;
         }
         if (!(livingRenderer.getModel() instanceof HumanoidModel<?> humanoid)) {
-            // Существо без рук: в первом лице их быть не должно.
+            // Creatures without arms should show none in first person.
             return true;
         }
 
@@ -189,9 +187,8 @@ public final class FullFormRenderer {
     }
 
     /**
-     * Стадии II–IV: первое лицо не отстаёт от третьего. На руку ложатся те же пятна заражения,
-     * что и на тело, а если на ней уже проросла рука существа — она рисуется поверх.
-     * Полную форму этот проход не трогает — там рука уже чужая.
+     * At stages II–IV, render the same infection patches on the first-person arm as on the body. Draw any
+     * emerging creature arm over them. A separate pass renders the arm in full form.
      */
     public static void tintHand(AbstractClientPlayer player, PoseStack poseStack, MultiBufferSource buffer,
                                 int packedLight, ModelPart arm, ModelPart sleeve, boolean right) {

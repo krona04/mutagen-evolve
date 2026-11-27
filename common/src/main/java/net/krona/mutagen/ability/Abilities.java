@@ -52,10 +52,10 @@ import java.util.Optional;
 import java.util.function.Function;
 
 /**
- * Типы активных способностей, из которых штаммы собираются в датапаках.
+ * Active ability types that datapacks can use to build strains.
  * <p>
- * Общие поля у всех: {@code "from_stage"}, {@code "cooldown"} в тиках, {@code "cost"}
- * ({@code hunger}, {@code health}), {@code "apex"} и {@code "name"} — ключ перевода.
+ * All abilities share {@code "from_stage"}, {@code "cooldown"} in ticks, {@code "cost"} ({@code hunger} and
+ * {@code health}), {@code "apex"}, and the translation key {@code "name"}.
  */
 public final class Abilities {
     private static final Codec<Ability.Cost> COST_CODEC = RecordCodecBuilder.create(instance -> instance.group(
@@ -76,7 +76,7 @@ public final class Abilities {
     public static final AbilityType<Vortex> VORTEX = AbilityType.register("vortex", Vortex.CODEC);
     public static final AbilityType<Lunge> LUNGE = AbilityType.register("lunge", Lunge.CODEC);
 
-    /** Любая способность: поле {@code "type"} выбирает формат остальных полей. */
+    /** The {@code "type"} field determines how to read the remaining ability fields. */
     private static final MapCodec<Ability> RAW = AbilityType.CODEC.dispatchMap("type", Ability::type, AbilityType::codec);
     public static final Codec<Ability> CODEC = RecordCodecBuilder.<Conditioned>create(instance -> instance.group(
             RAW.forGetter(Conditioned::delegate),
@@ -118,7 +118,7 @@ public final class Abilities {
         return Codec.BOOL.optionalFieldOf("apex", false).forGetter(getter);
     }
 
-    /** Наградить себя эффектами: рывок регенерации, ночное зрение, сопротивление. */
+    /** Apply effects to the player, such as a burst of regeneration, night vision, or resistance. */
     public record EffectBurst(Stage minStage, String nameKey, int cooldown, Ability.Cost cost, boolean apex,
                               List<Holder<MobEffect>> effects, int duration, int amplifier) implements Ability {
         static final MapCodec<EffectBurst> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
@@ -154,7 +154,7 @@ public final class Abilities {
         }
     }
 
-    /** Рывок в сторону взгляда. */
+    /** Dash in the direction the player is looking. */
     public record Leap(Stage minStage, String nameKey, int cooldown, Ability.Cost cost, boolean apex,
                        double power, double lift, List<Holder<MobEffect>> effects, int duration,
                        int amplifier) implements Ability {
@@ -186,7 +186,7 @@ public final class Abilities {
         public boolean activate(ServerPlayer player, Stage stage) {
             Vec3 look = player.getLookAngle().normalize();
             player.setDeltaMovement(look.x * power, (player.isInWater() ? look.y * power : Math.max(look.y * power, 0.0D)) + lift, look.z * power);
-            // Без этого сервер считает движение читерским и вернёт игрока назад.
+            // Without this, the server treats the movement as invalid and teleports the player back.
             player.hurtMarked = true;
             for (Holder<MobEffect> effect : effects) {
                 player.addEffect(new MobEffectInstance(effect, duration, amplifier, false, true, true));
@@ -197,7 +197,7 @@ public final class Abilities {
         }
     }
 
-    /** Толчок вокруг себя: урон и отброс, иногда ценой собственной крови. */
+    /** Damage and knock back nearby targets, sometimes at the cost of the player's health. */
     public record Shockwave(Stage minStage, String nameKey, int cooldown, Ability.Cost cost, boolean apex,
                             double radius, float damage, double knockback, int ignite) implements Ability {
         static final MapCodec<Shockwave> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
@@ -230,7 +230,8 @@ public final class Abilities {
                     entity -> AbilityTargets.valid(player, entity, radius));
 
             if (targets.isEmpty()) {
-                // Волна в пустоту не берёт ни цены, ни перезарядки: цена крипера — три сердца.
+                // A shockwave with no targets spends neither resources nor cooldown. The creeper ability
+                // costs three hearts.
                 player.displayClientMessage(Component.translatable("mutagen.ability.no_target"), true);
                 return false;
             }
@@ -257,7 +258,7 @@ public final class Abilities {
         }
     }
 
-    /** Залп стрел веером. Стрелы не подбираются обратно — это не бесплатный колчан. */
+    /** Fire a spread of arrows that players cannot pick up. */
     public record Volley(Stage minStage, String nameKey, int cooldown, Ability.Cost cost, boolean apex,
                          int arrows, float spread, float velocity, double damage) implements Ability {
         static final MapCodec<Volley> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
@@ -290,11 +291,11 @@ public final class Abilities {
             for (int index = 0; index < arrows; index++) {
                 Arrow arrow = new Arrow(level, player, new ItemStack(Items.ARROW), null);
                 arrow.setBaseDamage(damage);
-                // Стрелы этого залпа не подбираются: способность не должна кормить колчан.
+                // Prevent pickup so the volley cannot replenish the player's arrows.
                 arrow.pickup = AbstractArrow.Pickup.DISALLOWED;
                 arrow.shoot(player.getLookAngle().x, player.getLookAngle().y, player.getLookAngle().z,
                         velocity, 0.0F);
-                // Разводим веером вокруг направления взгляда.
+                // Spread the arrows around the player's look direction.
                 float angle = (index - middle) * spread;
                 Vec3 motion = arrow.getDeltaMovement().yRot((float) Math.toRadians(-angle));
                 arrow.setDeltaMovement(motion);
@@ -307,7 +308,7 @@ public final class Abilities {
         }
     }
 
-    /** Зов сородичей: свои идут за того, кто вас ударил. */
+    /** Call nearby creatures of the same kind to attack whoever hit the player. */
     public record Rally(Stage minStage, String nameKey, int cooldown, Ability.Cost cost, boolean apex,
                         Optional<TagKey<EntityType<?>>> kin, List<EntityType<?>> entities, double radius,
                         int duration) implements Ability {
@@ -360,8 +361,8 @@ public final class Abilities {
             for (Mob kinsman : kinsmen) {
                 kinsman.setTarget(enemy);
                 kinsman.setLastHurtByMob(enemy);
-                // Нейтральные (волки, пчёлы, пиглины-зомби) нападают только в злости, а пиглины
-                // и им подобные думают мозгом, а не целью моба — им нужна ещё и память.
+                // Neutral mobs like wolves, bees, and zombified piglins attack only when angry.
+                // Brain-driven mobs like piglins also need an attack target in memory.
                 if (kinsman instanceof NeutralMob neutral) {
                     neutral.setPersistentAngerTarget(enemy.getUUID());
                     neutral.startPersistentAngerTimer();
@@ -390,7 +391,7 @@ public final class Abilities {
         }
     }
 
-    /** Чутьё: живое вокруг начинает светиться сквозь стены. */
+    /** Make nearby living entities glow through walls. */
     public record Reveal(Stage minStage, String nameKey, int cooldown, Ability.Cost cost, boolean apex,
                          double radius, int duration) implements Ability {
         static final MapCodec<Reveal> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
@@ -421,7 +422,7 @@ public final class Abilities {
                     entity -> entity != player && EntitySelector.NO_SPECTATORS.test(entity));
 
             if (found.isEmpty()) {
-                // Пустое чутьё не берёт ни цены, ни перезарядки: промах не должен наказывать дважды.
+                // Sensing nothing costs no resources and starts no cooldown.
                 player.displayClientMessage(Component.translatable("mutagen.ability.no_target"), true);
                 return false;
             }
@@ -437,7 +438,7 @@ public final class Abilities {
         }
     }
 
-    /** Живая цель под прицелом: первое существо на луче взгляда, которое не закрыто стеной. */
+    /** Find the first living target along the player's line of sight that a wall does not obstruct. */
     @Nullable
     static LivingEntity lookTarget(ServerPlayer player, double range) {
         Vec3 eye = player.getEyePosition();
@@ -456,7 +457,7 @@ public final class Abilities {
         return hit != null && hit.getEntity() instanceof LivingEntity living && AbilityTargets.valid(player, living, range) ? living : null;
     }
 
-    /** Цепочка частиц от глаз носителя до цели: видно, откуда прилетело. */
+    /** Draw particles from the player's eyes to the target to show where the attack came from. */
     static void trail(ServerLevel level, Vec3 from, Vec3 to, ParticleType<?> particle) {
         if (!(particle instanceof SimpleParticleType simple)) {
             return;
@@ -469,7 +470,7 @@ public final class Abilities {
         }
     }
 
-    /** Телепорт по взгляду: туда, куда смотришь, но не дальше {@code range} и не в стену. */
+    /** Teleport along the player's line of sight, up to {@code range} and clear of walls. */
     public record Blink(Stage minStage, String nameKey, int cooldown, Ability.Cost cost, boolean apex,
                         double range, List<Holder<MobEffect>> effects, int duration) implements Ability {
         static final MapCodec<Blink> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
@@ -506,10 +507,10 @@ public final class Abilities {
             if (hit.getType() == HitResult.Type.MISS) {
                 aim = eye.add(look.scale(range));
             } else if (hit.getDirection() == Direction.UP) {
-                // Смотрели в пол — встаём на этот блок.
+                // When aiming at the floor, land on the targeted block.
                 aim = hit.getLocation();
             } else {
-                // В стену или потолок — встаём перед ней, чуть отступив назад.
+                // When aiming at a wall or ceiling, land just in front of it.
                 aim = hit.getLocation().subtract(look.scale(0.6D));
             }
 
@@ -537,7 +538,7 @@ public final class Abilities {
             return true;
         }
 
-        /** Ближайшее к точке место, где помещается тело носителя: сама точка, выше или чуть ниже. */
+        /** Find the closest position that fits the player at, above, or slightly below the target point. */
         @Nullable
         private static Vec3 safeSpot(ServerPlayer player, Vec3 aim) {
             ServerLevel level = player.serverLevel();
@@ -555,8 +556,8 @@ public final class Abilities {
     }
 
     /**
-     * Удар на расстоянии: луч стража, паутина паука, взгляд эндермена. Бьёт того, в кого смотришь,
-     * или, с {@code radius}, всех вокруг. Урон магический и засчитывается носителю.
+     * Ranged attack used for the guardian beam, spider web, or enderman stare. Hits the target in sight or
+     * every nearby target when {@code radius} is set. Magic damage is credited to the player.
      */
     public record Hex(Stage minStage, String nameKey, int cooldown, Ability.Cost cost, boolean apex,
                       double range, double radius, float damage, List<Holder<MobEffect>> effects, int duration,
@@ -629,7 +630,7 @@ public final class Abilities {
         }
     }
 
-    /** Огненные шары ифрита: один или веером. Поджигают, как настоящие. */
+    /** Fire one blaze fireball or a spread. They set targets on fire like vanilla fireballs. */
     public record Fireball(Stage minStage, String nameKey, int cooldown, Ability.Cost cost, boolean apex,
                            int count, float spread) implements Ability {
         static final MapCodec<Fireball> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
@@ -670,7 +671,7 @@ public final class Abilities {
         }
     }
 
-    /** Водоворот: всё вокруг тянет к носителю и бьёт водой. */
+    /** Pull nearby entities toward the player and deal water damage. */
     public record Vortex(Stage minStage, String nameKey, int cooldown, Ability.Cost cost, boolean apex,
                          double radius, double pull, float damage, int duration) implements Ability {
         static final MapCodec<Vortex> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
@@ -736,7 +737,7 @@ public final class Abilities {
         }
     }
 
-    /** Бросок на цель под прицелом: носитель летит к ней, и зубы достают её сразу. */
+    /** Lunge at the target in sight and bite it immediately. */
     public record Lunge(Stage minStage, String nameKey, int cooldown, Ability.Cost cost, boolean apex,
                         double range, double power, float damage) implements Ability {
         static final MapCodec<Lunge> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(

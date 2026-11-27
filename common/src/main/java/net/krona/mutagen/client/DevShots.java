@@ -17,12 +17,13 @@ import org.slf4j.Logger;
 import java.nio.file.Files;
 
 /**
- * Инструмент разработки: снимки экрана по команде из чата, чтобы проверять визуал стадий без рук.
+ * Development tool for capturing transformation screenshots through chat commands.
  * <p>
- * Включается только файлом {@code mutagen_devshots.flag} в папке игры — у игроков его нет, и хук
- * не регистрируется вовсе. Строка чата вида {@code [devshot] имя вид} (вид — {@code front}, {@code back}
- * {@code first}, {@code inventory} или {@code turntable} — четыре ракурса сразу) ставит камеру, прячет интерфейс и через секунду сохраняет {@code screenshots/имя.png}.
- * Удобно слать её с сервера через {@code say} из RCON.
+ * Enable with {@code mutagen_devshots.flag} in the game directory. Without that file the hook stays
+ * unregistered. A chat line such as {@code [devshot] name view} sets the camera, hides the interface, and
+ * saves {@code screenshots/name.png} one second later. Views are {@code front}, {@code back}, {@code
+ * first}, {@code inventory}, and {@code turntable} for four views at once. Send it from the server with
+ * {@code say} over RCON.
  */
 @Environment(EnvType.CLIENT)
 public final class DevShots {
@@ -44,7 +45,7 @@ public final class DevShots {
             return;
         }
         LOGGER.warn("[Mutagen] Dev screenshots are enabled (mutagen_devshots.flag)");
-        // Команда say приходит то чатом игрока, то системным сообщением — слушаем оба.
+        // Handle both player chat and system messages because say can arrive through either.
         ClientChatEvent.RECEIVED.register((type, message) -> {
             onMessage(message.getString());
             return CompoundEventResult.pass();
@@ -76,7 +77,7 @@ public final class DevShots {
             case "first" -> CameraType.FIRST_PERSON;
             default -> CameraType.THIRD_PERSON_FRONT;
         });
-        // Интерфейс прячется вместе с рукой, поэтому для вида от первого лица его не трогаем.
+        // Hiding the interface also hides the hand, so leave it visible for first-person shots.
         minecraft.options.hideGui = !"first".equals(view) && !"inventory".equals(view) && !"turntable".equals(view);
         if ("inventory".equals(view) && minecraft.player != null) {
             minecraft.setScreen(new InventoryScreen(minecraft.player));

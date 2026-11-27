@@ -27,10 +27,10 @@ import org.lwjgl.glfw.GLFW;
 
 @Environment(EnvType.CLIENT)
 public final class MutagenClient {
-    /** Гено-древо: каталог встреченных видов. По умолчанию G — в ванилле эта клавиша свободна. */
+    /** The gene tree lists encountered species. G is unbound in vanilla. */
     public static final KeyMapping GENE_TREE_KEY = new KeyMapping("key.mutagen.gene_tree",
             InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_G, "key.categories.mutagen");
-    /** Две обычные способности и апекс. R, V и B в ванилле свободны. */
+    /** Two standard abilities and one apex ability. Vanilla leaves R, V, and B unbound. */
     public static final KeyMapping[] ABILITY_KEYS = {
             new KeyMapping("key.mutagen.ability_1", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_R,
                     "key.categories.mutagen"),
@@ -45,7 +45,7 @@ public final class MutagenClient {
     private MutagenClient() {
     }
 
-    /** Интерфейс, клавиши и клиентский тик. Безопасно вызывать в любой момент запуска. */
+    /** Register the UI, key bindings, and client tick handler. Safe at any startup phase. */
     public static void init() {
         UpdateChecker.start();
         UpdateNotifier.init();
@@ -87,7 +87,7 @@ public final class MutagenClient {
         MobVision.tick(minecraft);
     }
 
-    /** Решение принимает сервер: клиент только просит и ничего не предсказывает. */
+    /** The client sends a request and leaves activation and its effects to the server. */
     private static void requestAbility(Minecraft minecraft, int index) {
         if (index < 0 || minecraft.player == null || minecraft.screen != null) {
             return;
@@ -96,11 +96,10 @@ public final class MutagenClient {
     }
 
     /**
-     * Экраны машин.
+     * Lab machine screens.
      * <p>
-     * Вызывать только там, где загрузчик ещё принимает регистрацию экранов: на Fabric это
-     * клиентская точка входа, на NeoForge — собственное событие {@code RegisterMenuScreensEvent},
-     * поэтому там регистрация идёт мимо этого метода.
+     * Call while the loader still accepts screen registration. Fabric calls this from its client entry
+     * point. NeoForge registers screens separately through {@code RegisterMenuScreensEvent}.
      */
     public static void registerScreens() {
         MenuRegistry.registerScreenFactory(MutagenBlocks.CENTRIFUGE_MENU.get(), CentrifugeScreen::new);

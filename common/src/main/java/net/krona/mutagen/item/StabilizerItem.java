@@ -19,8 +19,7 @@ import net.minecraft.world.level.Level;
 import java.util.List;
 
 /**
- * Стабилизатор: закрепляет текущий уровень штамма, и прогресс перестаёт откатываться сам.
- * Повторное применение снимает фиксацию.
+ * A stabilizer locks the current progress against decay. Use it again to unlock it.
  */
 public class StabilizerItem extends Item {
     public StabilizerItem(Properties properties) {

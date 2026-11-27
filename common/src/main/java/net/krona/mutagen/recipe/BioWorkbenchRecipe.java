@@ -21,10 +21,10 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 /**
- * Рецепт верстака биолога: набор ингредиентов с количествами, без формы.
+ * Shapeless bio workbench recipe with an item count for each ingredient.
  * <p>
- * Лабораторная сборка — это «сколько чего», а не «что где лежит»: пять слитков железа кладутся
- * одной стопкой в любую ячейку. Лишнего на столе быть не должно — иначе рецепт не сработает.
+ * Counts matter more than placement. A stack of five iron ingots can go in any slot. Extra ingredients
+ * prevent a match.
  */
 public class BioWorkbenchRecipe implements Recipe<BioWorkbenchInput> {
     private final List<CountedIngredient> ingredients;
@@ -44,7 +44,7 @@ public class BioWorkbenchRecipe implements Recipe<BioWorkbenchInput> {
     }
 
     /**
-     * Сколько взять из каждой ячейки, чтобы собрать рецепт один раз, или null, если он не собирается.
+     * Items to take from each slot for one craft, or null if the recipe does not match.
      */
     @Nullable
     public int[] plan(BioWorkbenchInput input) {
@@ -82,7 +82,7 @@ public class BioWorkbenchRecipe implements Recipe<BioWorkbenchInput> {
         return take;
     }
 
-    /** Забирает ингредиенты одного сбора из контейнера ячеек. */
+    /** Consume the ingredients for one craft from the input slots. */
     public boolean consume(Container container) {
         int[] take = plan(BioWorkbenchInput.of(container));
         if (take == null) {
@@ -125,7 +125,7 @@ public class BioWorkbenchRecipe implements Recipe<BioWorkbenchInput> {
         return list;
     }
 
-    /** Книга рецептов о нашем типе не знает: у верстака свой список на экране. */
+    /** The bio workbench has its own recipe list because the vanilla recipe book does not know this recipe type. */
     @Override
     public boolean isSpecial() {
         return true;
@@ -142,8 +142,8 @@ public class BioWorkbenchRecipe implements Recipe<BioWorkbenchInput> {
     }
 
     /**
-     * Ингредиент с количеством. В JSON пишется полной формой
-     * {@code {"ingredient": {"item": "..."}, "count": 5}} или короткой {@code {"item": "..."}}.
+     * Ingredient with a count. JSON supports {@code {"ingredient": {"item": "..."}, "count": 5}} and the
+     * short form {@code {"item": "..."}}.
      */
     public record CountedIngredient(Ingredient ingredient, int count) {
         private static final Codec<CountedIngredient> FULL_CODEC = RecordCodecBuilder.create(instance -> instance.group(

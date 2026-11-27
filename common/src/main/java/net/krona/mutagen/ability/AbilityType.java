@@ -12,10 +12,10 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Тип способности: имя в поле {@code "type"} и формат остальных полей.
+ * An ability's {@code "type"} name and the schema for its other fields.
  * <p>
- * Устроен так же, как {@link net.krona.mutagen.strain.TraitType}: свой реестр, потому что
- * способности живут внутри штаммов и отдельной синхронизации с клиентом не требуют.
+ * Like {@link net.krona.mutagen.strain.TraitType}, this uses its own registry. Abilities already travel
+ * with their strains, so they need no separate client sync.
  */
 public record AbilityType<T extends Ability>(ResourceLocation id, MapCodec<T> codec) {
     private static final Map<ResourceLocation, AbilityType<?>> TYPES = new LinkedHashMap<>();
@@ -41,7 +41,7 @@ public record AbilityType<T extends Ability>(ResourceLocation id, MapCodec<T> co
 
     private static DataResult<AbilityType<?>> lookup(ResourceLocation id) {
         AbilityType<?> type = TYPES.get(id);
-        // Короткая запись: "type": "leap" вместо "mutagen:leap".
+        // Use the short form "type": "leap" in place of "mutagen:leap".
         if (type == null && id.getNamespace().equals(ResourceLocation.DEFAULT_NAMESPACE)) {
             type = TYPES.get(Mutagen.id(id.getPath()));
         }

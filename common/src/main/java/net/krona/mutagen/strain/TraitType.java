@@ -12,10 +12,10 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Тип черты: имя в поле {@code "type"} и формат остальных полей.
+ * A trait's {@code "type"} name and the schema for its other fields.
  * <p>
- * Реестр свой, а не ванильный: черты живут только внутри штаммов, и синхронизировать
- * отдельный реестр с клиентом незачем. Аддоны регистрируют свои типы через {@link #register}.
+ * Use a private registry because traits already travel with their strains. Add-ons can register types
+ * through {@link #register}.
  */
 public record TraitType<T extends Trait>(ResourceLocation id, MapCodec<T> codec) {
     private static final Map<ResourceLocation, TraitType<?>> TYPES = new LinkedHashMap<>();
@@ -41,7 +41,7 @@ public record TraitType<T extends Trait>(ResourceLocation id, MapCodec<T> codec)
 
     private static DataResult<TraitType<?>> lookup(ResourceLocation id) {
         TraitType<?> type = TYPES.get(id);
-        // Короткая запись: "type": "sun_burn" вместо "mutagen:sun_burn".
+        // Use the short form "type": "sun_burn" in place of "mutagen:sun_burn".
         if (type == null && id.getNamespace().equals(ResourceLocation.DEFAULT_NAMESPACE)) {
             type = TYPES.get(Mutagen.id(id.getPath()));
         }

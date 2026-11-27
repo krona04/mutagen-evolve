@@ -5,21 +5,20 @@ import net.krona.mutagen.strain.Trait;
 import net.minecraft.server.level.ServerPlayer;
 
 /**
- * Прослойка, которая меняет тело носителя: ванильный атрибут масштаба или Pehkui.
+ * Apply the player's body shape through the vanilla scale attribute or Pehkui.
  * <p>
- * Мод никогда не зовёт Pehkui напрямую — только через эту прослойку, поэтому Pehkui остаётся
- * рекомендуемой, но не обязательной зависимостью.
+ * Calls to Pehkui go through this adapter so Pehkui can remain an optional dependency.
  */
 public interface BodyScaler {
-    /** Имя для логов и {@code /mutagen status}. */
+    /** Name shown in logs and {@code /mutagen status}. */
     String name();
 
     /**
-     * Приводит тело игрока к форме {@code shape}. Раз в секунду на сервере.
-     * Модификаторы атрибутов, если они нужны, отдаются в {@code sink}: их снимает и ставит общий код.
+     * Apply {@code shape} once per second on the server. Send any required attribute modifiers to {@code
+     * sink} so the shared code can apply and remove them.
      */
     void apply(ServerPlayer player, BodyShape shape, Trait.AttributeSink sink);
 
-    /** Хитбокс и высоту глаз считает мод сам (миксин размеров игрока), а не сторонняя библиотека. */
+    /** The player dimensions mixin calculates the hitbox and eye height. */
     boolean ownsDimensions();
 }

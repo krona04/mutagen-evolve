@@ -21,18 +21,16 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Изученность видов: сколько процентов генома каждого вида уже прочитано.
+ * Percentage of each species' genome that has been researched.
  * <p>
- * Хранится в сохранении мира. По умолчанию знание общее на мир — команда исследует вместе;
- * с {@code knowledgeScope = "player"} у каждого игрока своя лаборатория в голове.
- * Запись о виде появляется, как только у него взят первый образец: так вид попадает в гено-древо.
+ * Store research in the world save. Research is shared by default. With {@code knowledgeScope = "player"},
+ * each player tracks it separately. Collecting the first sample adds the species to the gene tree.
  */
 public final class MutagenKnowledge extends SavedData {
     private static final String NAME = Mutagen.MOD_ID + "_knowledge";
     private static final int FORMAT_VERSION = 1;
     /**
-     * Тип датафикса обязателен: ванильное хранилище не проверяет его на null. Своих правок у этого
-     * типа для наших полей нет, так что данные проходят через него нетронутыми.
+     * Vanilla storage requires a data-fix type. This type leaves our custom fields unchanged.
      */
     private static final Factory<MutagenKnowledge> FACTORY =
             new Factory<>(MutagenKnowledge::new, MutagenKnowledge::load, DataFixTypes.SAVED_DATA_COMMAND_STORAGE);
@@ -59,7 +57,7 @@ public final class MutagenKnowledge extends SavedData {
         return create ? players.computeIfAbsent(player, key -> new LinkedHashMap<>()) : players.get(player);
     }
 
-    /** Изученность вида для игрока (или для мира, если знание общее). */
+    /** Species research for this player, or for the world when shared. */
     public float research(@Nullable UUID player, ResourceLocation strain) {
         Map<ResourceLocation, Float> scope = scope(player, false);
         return scope == null ? 0.0F : scope.getOrDefault(strain, 0.0F);
@@ -70,7 +68,7 @@ public final class MutagenKnowledge extends SavedData {
         return scope != null && scope.containsKey(strain);
     }
 
-    /** Вносит вид в гено-древо. true, если вид встречен впервые. */
+    /** Add the species to the gene tree. Return true on the first discovery. */
     public boolean discover(@Nullable UUID player, ResourceLocation strain) {
         Map<ResourceLocation, Float> scope = scope(player, true);
         if (scope == null || scope.containsKey(strain)) {
@@ -81,7 +79,7 @@ public final class MutagenKnowledge extends SavedData {
         return true;
     }
 
-    /** Добавляет изученность и возвращает новое значение. */
+    /** Add research and return the updated value. */
     public float addResearch(@Nullable UUID player, ResourceLocation strain, float amount) {
         return setResearch(player, strain, research(player, strain) + amount);
     }
@@ -97,13 +95,13 @@ public final class MutagenKnowledge extends SavedData {
         return clamped;
     }
 
-    /** Всё, что знает игрок: для гено-древа и первой синхронизации. */
+    /** Full research snapshot for the gene tree and initial synchronization. */
     public Map<ResourceLocation, Float> view(@Nullable UUID player) {
         Map<ResourceLocation, Float> scope = scope(player, false);
         return scope == null ? Map.of() : Map.copyOf(scope);
     }
 
-    /** Рассылает изменение одного вида тем, кого оно касается: всем при общем знании, иначе одному игроку. */
+    /** Send a species update to everyone for shared research, otherwise to the affected player. */
     public void broadcast(MinecraftServer server, @Nullable UUID player, ResourceLocation strain) {
         Map<ResourceLocation, Float> delta = Map.of(strain, research(player, strain));
         for (ServerPlayer target : audience(server, player)) {
@@ -119,7 +117,7 @@ public final class MutagenKnowledge extends SavedData {
         return target == null ? List.of() : List.of(target);
     }
 
-    // --- Сохранение ---
+    // --- Persistence ---
 
     @Override
     public CompoundTag save(CompoundTag tag, HolderLookup.Provider registries) {

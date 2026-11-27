@@ -6,7 +6,7 @@ import net.krona.mutagen.knowledge.Research;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.util.FastColor;
 
-/** Полоса изученности с засечками порогов — общая для секвенатора и гено-древа. */
+/** Research bar with threshold markers, shared by the sequencer and gene tree. */
 @Environment(EnvType.CLIENT)
 final class ResearchBar {
     private ResearchBar() {
@@ -29,7 +29,7 @@ final class ResearchBar {
         }
     }
 
-    /** Цвет, в который красится полоса: светлее для полностью изученного вида. */
+    /** Use a lighter bar color for fully researched species. */
     static int color(int strainColor, float research) {
         if (Research.mastered(research)) {
             return FastColor.ARGB32.color(255,

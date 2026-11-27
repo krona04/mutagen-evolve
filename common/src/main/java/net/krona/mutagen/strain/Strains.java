@@ -19,18 +19,16 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Загруженные штаммы.
+ * Registry of loaded strains.
  * <p>
- * Набор заменяется целиком одним снимком: при перезагрузке датапака сервер и клиент в одиночной игре
- * видят либо старый набор, либо новый, но никогда не половину. Штаммы в Java больше не пишутся —
- * их даёт {@link StrainLoader} из датапаков, а на клиент они приезжают пакетом.
+ * Replace the registry as a single snapshot so the integrated client and server never see a partial reload.
+ * {@link StrainLoader} reads strains from datapacks and they are sent to clients in a packet.
  */
 public final class Strains {
     private static volatile Snapshot current = Snapshot.EMPTY;
 
     /**
-     * Атрибуты, которые мод трогает. Набор только растёт: если перезагрузка убрала черту,
-     * её модификатор всё равно нужно снять с игрока.
+     * Keep all affected attributes so a reload can remove modifiers from traits that are no longer defined.
      */
     private static final Set<Holder<Attribute>> TRACKED_ATTRIBUTES = ConcurrentHashMap.newKeySet();
 
@@ -44,7 +42,7 @@ public final class Strains {
     private Strains() {
     }
 
-    /** Заменяет весь набор. Если два штамма претендуют на одно существо, побеждает первый по id. */
+    /** Replace the entire registry. When two strains use the same entity, choose the first by ID. */
     public static void replace(Collection<Strain> strains) {
         Map<ResourceLocation, Strain> byId = new LinkedHashMap<>();
         Map<EntityType<?>, Strain> byEntity = new LinkedHashMap<>();
@@ -87,7 +85,7 @@ public final class Strains {
         return current.byId().size();
     }
 
-    /** Годится ли предмет в катализатор хоть одного штамма — для слота синтезатора. */
+    /** Whether any strain accepts this item as a synthesis catalyst. */
     public static boolean isCatalyst(ItemStack stack) {
         return current.catalysts().contains(stack.getItem());
     }
@@ -96,7 +94,7 @@ public final class Strains {
         return TRACKED_ATTRIBUTES;
     }
 
-    /** Неизменяемый снимок набора: читается без блокировок с любого потока. */
+    /** Immutable snapshot that any thread can read without locks. */
     private record Snapshot(Map<ResourceLocation, Strain> byId, Map<EntityType<?>, Strain> byEntity,
                             Set<Item> catalysts) {
         static final Snapshot EMPTY = new Snapshot(Map.of(), Map.of(), Set.of());

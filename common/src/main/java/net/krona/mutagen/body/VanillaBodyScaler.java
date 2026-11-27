@@ -7,9 +7,9 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 
 /**
- * Тело без сторонних модов. Модель растёт через атрибут {@code minecraft:generic.scale}, дальность рук —
- * через атрибуты дальности взаимодействия, а ширину, высоту и глаза хитбокса отдельно от масштаба
- * задаёт миксин размеров игрока ({@code PlayerMixin}).
+ * Vanilla body scaling. Use {@code minecraft:generic.scale} for the model and interaction range attributes
+ * for reach. The player dimensions mixin ({@code PlayerMixin}) sets hitbox width, height, and eye height
+ * independently.
  */
 public final class VanillaBodyScaler implements BodyScaler {
     @Override

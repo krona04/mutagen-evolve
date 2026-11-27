@@ -29,27 +29,26 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Зрение существа: эффект экрана, как у ванили, когда в режиме зрителя смотришь глазами крипера,
- * паука или эндермена. Включается настройкой {@code mobVision} (по умолчанию выключена) и работает,
- * только пока камера — сам игрок: чужие эффекты (режим зрителя) не трогаются.
+ * Creature vision uses screen effects like vanilla creeper, spider, and enderman spectator views. Enable it
+ * with {@code mobVision}. It applies only while the camera is on the player, leaving spectator effects to
+ * vanilla.
  * <p>
- * Зрение меняется вместе с телом, а не включается рывком. Эффект загружается целиком, но каждый
- * параметр его шейдеров стоит между «ничего не меняю» и своим полным значением — по тому, как далеко
- * зашло превращение: на II стадии мир едва тронут цветом, к полной форме он виден глазами существа.
- * Резкий скачок прогресса (доза, команда) растягивается примерно на секунду.
+ * Vision strength follows the transformation. Load the full effect and interpolate each shader parameter
+ * from neutral to its configured value. The effect is subtle at stage II and reaches full intensity in full
+ * form. Abrupt progress changes from commands or doses blend over about one second.
  */
 @Environment(EnvType.CLIENT)
 public final class MobVision {
-    /** Эффекты, которые не загрузились: второй раз их не пробуем, чтобы не сыпать ошибками каждый тик. */
+    /** Remember effects that failed to load so they do not generate errors every tick. */
     private static final Set<ResourceLocation> BROKEN = new HashSet<>();
-    /** Насколько сила зрения может измениться за тик: полный путь — за секунду. */
+    /** Maximum change in vision strength per tick. A complete transition takes one second. */
     private static final float STEP = 0.05F;
-    /** Ниже этой силы эффект снимается совсем: незаметное зрение не стоит кадров. */
+    /** Remove the effect below this threshold to avoid rendering an imperceptible effect. */
     private static final float VISIBLE = 0.01F;
 
     /**
-     * Значения, при которых проход шейдера не меняет картинку. Параметры, которых здесь нет, остаются
-     * как в файле эффекта.
+     * Neutral values that leave the image unchanged. Parameters omitted here retain their effect-file
+     * values.
      */
     private static final Map<String, float[]> NEUTRAL = Map.ofEntries(
             Map.entry("RedMatrix", new float[]{1.0F, 0.0F, 0.0F}),
@@ -67,10 +66,10 @@ public final class MobVision {
             Map.entry("Scissor", new float[]{0.0F, 0.0F, 1.0F, 1.0F}),
             Map.entry("Vignette", new float[]{0.0F, 0.0F, 1.0F, 1.0F}),
             Map.entry("ColorModulate", new float[]{1.0F, 1.0F, 1.0F, 1.0F}));
-    /** Сколько уровней цвета в канале — столько, что ступенек не видно. */
+    /** Number of color levels per channel needed to hide visible banding. */
     private static final float SMOOTH_RESOLUTION = 256.0F;
 
-    /** Параметр шейдера и его полное значение из файла эффекта. */
+    /** A shader uniform and its full-strength value from the effect file. */
     private record Knob(Uniform uniform, String name, float[] full) {
     }
 
@@ -79,7 +78,7 @@ public final class MobVision {
     @Nullable
     private static PostChain chain;
     private static final List<Knob> KNOBS = new ArrayList<>();
-    /** Сила зрения, которая сейчас на экране: догоняет нужную не быстрее {@link #STEP} за тик. */
+    /** Displayed vision strength approaches the target by at most {@link #STEP} per tick. */
     private static float shown;
 
     private MobVision() {
@@ -88,7 +87,7 @@ public final class MobVision {
     public static void tick(Minecraft minecraft) {
         GameRenderer renderer = minecraft.gameRenderer;
         if (minecraft.player == null || minecraft.getCameraEntity() != minecraft.player) {
-            // Камера чужая — эффектом распоряжается ваниль.
+            // Let vanilla manage the effect while the camera is on another entity.
             forget();
             shown = 0.0F;
             return;
@@ -118,7 +117,7 @@ public final class MobVision {
         apply(shown);
     }
 
-    /** Переключение клавишей: настройка меняется и сохраняется. */
+    /** Toggle and save the setting when the key is pressed. */
     public static void toggle(Minecraft minecraft) {
         MutagenConfig config = MutagenConfig.get();
         config.mobVision = !config.mobVision;
@@ -137,15 +136,15 @@ public final class MobVision {
         ((GameRendererInvoker) renderer).mutagen$loadEffect(shader);
         PostChain loaded = renderer.currentEffect();
         if (loaded == null || !((GameRendererInvoker) renderer).mutagen$isEffectActive()) {
-            // Ваниль сама пишет причину в лог и оставляет закрытую цепочку — её нужно убрать.
+            // Vanilla logs the error and leaves a closed chain that must be cleared.
             renderer.shutdownEffect();
             BROKEN.add(shader);
             return false;
         }
         active = shader;
         chain = loaded;
-        // Полные значения берутся у самих шейдеров сразу после загрузки: в них уже и то, что задал файл
-        // эффекта, и то, что программа берёт по умолчанию.
+        // Capture each full-strength value from the loaded shader, including effect-file overrides and
+        // program defaults.
         for (PostPass pass : ((PostChainAccessor) loaded).mutagen$getPasses()) {
             EffectInstance effect = pass.getEffect();
             for (String name : NEUTRAL.keySet()) {
@@ -172,14 +171,13 @@ public final class MobVision {
         KNOBS.add(new Knob(uniform, name, full));
     }
 
-    /** Каждый параметр — между нейтральным и полным значением. */
+    /** Interpolate each parameter from neutral to full strength. */
     private static void apply(float strength) {
         float k = strength * strength * (3.0F - 2.0F * strength);
         for (Knob knob : KNOBS) {
             float[] values = new float[knob.full().length];
             if (knob.name().equals("Resolution")) {
-                // Уровни цвета: плавно по шагу ступеньки, а не по их числу — иначе постеризация
-                // выскакивала бы вся разом в самом конце.
+                // Interpolate the color step size to make posterization appear gradually.
                 float from = 1.0F / SMOOTH_RESOLUTION;
                 float to = 1.0F / Math.max(1.0F, knob.full()[0]);
                 values[0] = 1.0F / Mth.lerp(k, from, to);
@@ -212,13 +210,12 @@ public final class MobVision {
         return strain == null ? null : strain.vision().orElse(null);
     }
 
-    /** Нужная сила зрения: 0 на стадии, с которой оно начинается, 1 в полной форме. */
+    /** Vision strength at the player's current mutation progress. */
     private static float strength(Minecraft minecraft, Strain.Vision vision) {
         MutagenData.Gene gene = MutagenPlayer.of(minecraft.player).primary();
         if (gene == null) {
             return 0.0F;
         }
-        float from = vision.minStage().threshold();
-        return Mth.clamp((gene.progress() - from) / Math.max(1.0F, 100.0F - from), 0.0F, 1.0F);
+        return vision.strength(gene.progress());
     }
 }

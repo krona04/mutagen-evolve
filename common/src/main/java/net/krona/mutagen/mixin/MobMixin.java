@@ -17,12 +17,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
- * Две правки поведения моба.
+ * Modify mob origin tracking and targeting.
  * <p>
- * Первая — происхождение: из спавнера значит «истощённая линия», и образец от него хуже.
- * Метка обычным тегом сущности, поэтому переживает перезагрузку чанка без своего формата данных.
+ * Tag spawner mobs so their samples have lower quality. A vanilla entity tag survives chunk reloads.
  * <p>
- * Вторая — нейтралитет: вид, признавший носителя своим, не берёт его в цели.
+ * Mobs that recognize the player as their own species skip them when selecting a target.
  */
 @Mixin(Mob.class)
 public abstract class MobMixin {

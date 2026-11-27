@@ -34,10 +34,10 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Гено-древо: каталог встреченных видов и их генов.
+ * Gene tree of encountered species and their genes.
  * <p>
- * Вид появляется здесь с первым образцом. Пока геном прочитан меньше чем на четверть, гены скрыты:
- * игрок видит, что у существа что-то есть, но не знает что — это и есть повод идти к секвенатору.
+ * List the species after collecting its first sample. Its genes stay hidden below 25% research so the
+ * player can investigate them in the sequencer.
  */
 @Environment(EnvType.CLIENT)
 public class GeneTreeScreen extends Screen {
@@ -73,7 +73,7 @@ public class GeneTreeScreen extends Screen {
         refresh();
     }
 
-    /** Список пересобирается каждый кадр: изученность может вырасти, пока экран открыт. */
+    /** Rebuild the list each frame because research can change while the screen is open. */
     private void refresh() {
         List<Strain> known = new ArrayList<>();
         for (ResourceLocation id : ClientKnowledge.all().keySet()) {

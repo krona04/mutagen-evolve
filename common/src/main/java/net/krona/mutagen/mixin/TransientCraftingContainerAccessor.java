@@ -5,7 +5,7 @@ import net.minecraft.world.inventory.TransientCraftingContainer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
-/** Сетка крафта знает своё меню: по нему видно, что это сетка 2×2 в инвентаре игрока. */
+/** Expose the owning menu to identify the player inventory's 2×2 crafting grid. */
 @Mixin(TransientCraftingContainer.class)
 public interface TransientCraftingContainerAccessor {
     @Accessor("menu")

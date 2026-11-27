@@ -13,10 +13,10 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 
 /**
- * Верстак биолога: рабочая поверхность лаборатории, на которой собирают снаряжение и реагенты.
+ * Lab workbench for assembling equipment and reagents.
  * <p>
- * С 0.2 у верстака свой тип рецептов ({@code mutagen:bio_workbench}) и свой экран со списком
- * сборок. Сам верстак собирается на обычном, всё остальное снаряжение лаборатории — уже на нём.
+ * Since 0.2, the workbench has its own recipe type ({@code mutagen:bio_workbench}) and recipe list screen.
+ * Craft the workbench at a vanilla crafting table and use it to make the other lab equipment.
  */
 public class BioWorkbenchBlock extends Block {
     private static final Component TITLE = Component.translatable("container.mutagen.bio_workbench");

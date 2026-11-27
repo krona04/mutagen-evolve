@@ -23,8 +23,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
- * Состояние мутации живёт прямо на игроке и сохраняется вместе с ним.
- * Один и тот же код работает на обеих платформах, потому что цель миксина — ванильный класс.
+ * Store and save mutation state on the vanilla player entity on both loaders.
  */
 @Mixin(Player.class)
 public abstract class PlayerMixin implements MutagenPlayer {
@@ -43,8 +42,8 @@ public abstract class PlayerMixin implements MutagenPlayer {
     }
 
     /**
-     * Полный иммунитет: удар, сведённый чертами к нулю, не случается вовсе — без вспышки, звука
-     * и отброса. Иначе «лёгкие кости» всё равно дёргали бы камеру при каждом падении.
+     * Cancel damage reduced to zero before hit effects, sound, and knockback. Otherwise falling with light
+     * bones would still shake the camera.
      */
     @Inject(method = "hurt", at = @At("HEAD"), cancellable = true)
     private void mutagen$immune(DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {
@@ -55,22 +54,21 @@ public abstract class PlayerMixin implements MutagenPlayer {
         }
     }
 
-    /** Слабости и сопротивления носителя. Игрок считает урон сам, мимо версии живой сущности. */
+    /** Apply the player's weaknesses and resistances here because Player handles damage separately. */
     @ModifyVariable(method = "actuallyHurt", at = @At("HEAD"), argsOnly = true, ordinal = 0)
     private float mutagen$modifyDamage(float amount, DamageSource source) {
         return Mutation.modifyIncomingDamage((Player) (Object) this, source, amount);
     }
 
-    /** Удар вплотную по носителю или носителем по другому игроку: шипы, яд. */
+    /** Apply melee contact traits, such as thorns and venom, between players. */
     @Inject(method = "actuallyHurt", at = @At("HEAD"))
     private void mutagen$melee(DamageSource source, float amount, CallbackInfo ci) {
         Mutation.onDamaged((Player) (Object) this, source);
     }
 
     /**
-     * Жадность: то, что тело не отдаёт, возвращается в инвентарь вместо того, чтобы упасть на землю.
-     * Смерть и рассыпание вещей ({@code dropAround}) не останавливаются, а если места нет —
-     * остаток всё-таки падает: жадность не должна съедать предметы.
+     * Return items blocked by hoarding to the inventory. Death and {@code dropAround} still drop items, as
+     * does overflow when the inventory is full.
      */
     @Inject(method = "drop(Lnet/minecraft/world/item/ItemStack;ZZ)Lnet/minecraft/world/entity/item/ItemEntity;",
             at = @At("HEAD"), cancellable = true)
@@ -104,9 +102,8 @@ public abstract class PlayerMixin implements MutagenPlayer {
     }
 
     /**
-     * Настоящие габариты (0.3): ширина, высота и глаза хитбокса идут к размерам существа отдельно друг
-     * от друга, а не одним общим масштабом. Ванильный атрибут масштаба применяется к результату после,
-     * поэтому здесь он заранее вынесен за скобки — итог совпадает с формой тела ровно.
+     * Interpolate hitbox width, height, and eye height separately (0.3). Account for the vanilla scale
+     * attribute, which is applied after this method.
      */
     @Inject(method = "getDefaultDimensions", at = @At("RETURN"), cancellable = true)
     private void mutagen$bodyDimensions(Pose pose, CallbackInfoReturnable<EntityDimensions> cir) {
@@ -119,9 +116,8 @@ public abstract class PlayerMixin implements MutagenPlayer {
         }
         EntityDimensions current = cir.getReturnValue();
         if (!Bodies.ownsDimensions()) {
-            // Хитбокс меняет Pehkui, и глаза у него идут строго за высотой хитбокса. У существа они
-            // посажены иначе (у крипера ниже), поэтому высота глаз поправляется здесь — Pehkui затем
-            // масштабирует уже поправленное значение.
+            // Pehkui scales eye height with the hitbox. Set the creature-specific eye position here before
+            // Pehkui applies its scale.
             cir.setReturnValue(current.withEyeHeight(current.eyeHeight() * shape.eyeFactor() / shape.heightFactor()));
             return;
         }
